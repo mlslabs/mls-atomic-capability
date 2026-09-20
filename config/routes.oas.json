@@ -1,0 +1,1158 @@
+{
+  "info": {
+    "title": "Audio Video API - 音视频处理平台",
+    "description": "音视频转码任务管理接口文档：任务创建、查询、进度跟踪、取消等",
+    "contact": {
+      "name": "media-infra"
+    },
+    "version": "1.0.0"
+  },
+  "openapi": "3.1.0",
+  "components": {
+    "schemas": {
+      "ApiResultVoid": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "object"
+          },
+          "traceId": {
+            "type": "string"
+          }
+        }
+      },
+      "TaskIdListParam": {
+        "type": "object",
+        "properties": {
+          "taskIdList": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "callerId": {
+            "type": "string"
+          },
+          "apiKey": {
+            "type": "string"
+          }
+        }
+      },
+      "ApiResultPairBooleanString": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/PairBooleanString"
+          },
+          "traceId": {
+            "type": "string"
+          }
+        }
+      },
+      "PairBooleanString": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "boolean"
+          },
+          "value": {
+            "type": "string"
+          }
+        }
+      },
+      "ApiResultListProgressVO": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProgressVO"
+            }
+          },
+          "traceId": {
+            "type": "string"
+          }
+        }
+      },
+      "ProgressVO": {
+        "type": "object",
+        "properties": {
+          "taskId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "videoProgress": {
+            "type": "number"
+          },
+          "audioProgress": {
+            "type": "number"
+          },
+          "downloadProgress": {
+            "type": "number"
+          },
+          "uploadProgress": {
+            "type": "number"
+          },
+          "message": {
+            "type": "string"
+          },
+          "updateTime": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "TaskQueryParam": {
+        "type": "object",
+        "properties": {
+          "currentPage": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "taskIdList": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "statusList": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          "callerId": {
+            "type": "string"
+          },
+          "apiKey": {
+            "type": "string"
+          },
+          "keyword": {
+            "type": "string"
+          },
+          "startIndex": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "ApiResultPageResponseListTaskVo": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/PageResponseListTaskVo"
+          },
+          "traceId": {
+            "type": "string"
+          }
+        }
+      },
+      "PageResponseListTaskVo": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaskVo"
+            }
+          },
+          "pageStat": {
+            "$ref": "#/components/schemas/PageStatVo"
+          }
+        }
+      },
+      "PageStatVo": {
+        "type": "object",
+        "properties": {
+          "totalCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "currentPage": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "TaskVo": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "taskId": {
+            "type": "string"
+          },
+          "taskName": {
+            "type": "string"
+          },
+          "inputUrl": {
+            "type": "string"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "queue": {
+            "type": "string"
+          },
+          "workerIp": {
+            "type": "string"
+          },
+          "outUrl": {
+            "type": "string"
+          },
+          "outSize": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "failCode": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "videoProgress": {
+            "type": "number"
+          },
+          "audioProgress": {
+            "type": "number"
+          },
+          "downloadProgress": {
+            "type": "number"
+          },
+          "uploadProgress": {
+            "type": "number"
+          },
+          "message": {
+            "type": "string"
+          },
+          "callerId": {
+            "type": "string"
+          },
+          "startTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "endTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "createTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updateTime": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ApiResultListTaskDetailVo": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaskDetailVo"
+            }
+          },
+          "traceId": {
+            "type": "string"
+          }
+        }
+      },
+      "AudioEnhanceParam": {
+        "type": "object",
+        "properties": {
+          "audio3dEnable": {
+            "type": "boolean",
+            "description": "是否开启2d转3d"
+          },
+          "layout": {
+            "type": "string",
+            "description": "输出扬声器布局，可选的有：7.1.4、7.1.0、5.1.4、5.1.0"
+          },
+          "sampleRate": {
+            "type": "number",
+            "description": "采样率(Khz)",
+            "format": "double"
+          },
+          "format": {
+            "type": "string",
+            "description": "输出音频文件类型，可选的有：wav、av3a"
+          },
+          "audioBitrate": {
+            "type": "string",
+            "description": "音频码率(kbps)"
+          },
+          "useFakeStereo": {
+            "type": "boolean",
+            "description": "是否使用假立体声处理"
+          },
+          "enableVoiceOverflow": {
+            "type": "boolean",
+            "description": "是否开启人声溢出"
+          },
+          "enableVolumeGain": {
+            "type": "boolean",
+            "description": "是否开启声音增益"
+          },
+          "volumeGainParam": {
+            "$ref": "#/components/schemas/VolumeGainParam"
+          }
+        },
+        "description": "音频增强参数"
+      },
+      "BaseParam": {
+        "type": "object",
+        "properties": {
+          "format": {
+            "type": "string",
+            "description": "输出格式",
+            "example": "origin, mp4, mov, ts"
+          },
+          "codec": {
+            "type": "string",
+            "description": "视频编码",
+            "example": "H.265, H.264"
+          },
+          "bitrateControl": {
+            "type": "integer",
+            "description": "码率控制：0-保持原样，1-VBR(可变码率)，2-CBR(恒定码率)，3-CRF(恒定质量)，4-自定义，5-推荐码率",
+            "format": "int32"
+          },
+          "bitrate": {
+            "type": "integer",
+            "description": "目标视频码率 (Kb/s)",
+            "format": "int32",
+            "example": 30
+          }
+        },
+        "description": "视频处理基础参数"
+      },
+      "MediaMetadata": {
+        "type": "object",
+        "properties": {
+          "format": {
+            "type": "string"
+          },
+          "codec": {
+            "type": "string"
+          },
+          "resolution": {
+            "type": "string"
+          },
+          "frameRate": {
+            "type": "number"
+          },
+          "duration": {
+            "type": "number"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "hdrFormat": {
+            "type": "string"
+          },
+          "bitrate": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "bitRateMode": {
+            "type": "string"
+          },
+          "audioCodec": {
+            "type": "string"
+          },
+          "audioSampleRate": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "audioChannelLayout": {
+            "type": "string"
+          },
+          "audioBitrate": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "width": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "height": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "colorTransfer": {
+            "type": "string"
+          },
+          "colorPrimaries": {
+            "type": "string"
+          },
+          "colorSpace": {
+            "type": "string"
+          }
+        }
+      },
+      "TaskDetailVo": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "taskId": {
+            "type": "string"
+          },
+          "taskName": {
+            "type": "string"
+          },
+          "inputUrl": {
+            "type": "string"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "param": {
+            "$ref": "#/components/schemas/TranscodeParam"
+          },
+          "queue": {
+            "type": "string"
+          },
+          "workerIp": {
+            "type": "string"
+          },
+          "inMetadata": {
+            "$ref": "#/components/schemas/MediaMetadata"
+          },
+          "outPath": {
+            "type": "string"
+          },
+          "outName": {
+            "type": "string"
+          },
+          "outUrl": {
+            "type": "string"
+          },
+          "outSize": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "outMetadata": {
+            "$ref": "#/components/schemas/MediaMetadata"
+          },
+          "failCode": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "failLog": {
+            "type": "string"
+          },
+          "videoProgress": {
+            "type": "number"
+          },
+          "audioProgress": {
+            "type": "number"
+          },
+          "downloadProgress": {
+            "type": "number"
+          },
+          "uploadProgress": {
+            "type": "number"
+          },
+          "message": {
+            "type": "string"
+          },
+          "extra": {
+            "type": "string"
+          },
+          "callerId": {
+            "type": "string"
+          },
+          "retryCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "startTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "endTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "createTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updateTime": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "TranscodeParam": {
+        "type": "object",
+        "properties": {
+          "baseParam": {
+            "$ref": "#/components/schemas/BaseParam"
+          },
+          "videoEnhanceParam": {
+            "$ref": "#/components/schemas/VideoEnhanceParam"
+          },
+          "audioEnhanceParam": {
+            "$ref": "#/components/schemas/AudioEnhanceParam"
+          }
+        },
+        "description": "转码任务参数"
+      },
+      "VideoEnhanceParam": {
+        "type": "object",
+        "properties": {
+          "sdrToHdrEnable": {
+            "type": "boolean",
+            "description": "SDR转HDR"
+          },
+          "hdrOpt": {
+            "type": "integer",
+            "description": "hdr选项，1：HDR 2: HDR2HDR Vivid",
+            "format": "int32"
+          },
+          "hdrMode": {
+            "type": "string",
+            "description": "hdr格式，可选的有：PQ HLG"
+          },
+          "hdrLuminosity": {
+            "type": "integer",
+            "description": "hdr亮度，可选的有：1000、850、750、550、260、203",
+            "format": "int32"
+          },
+          "hdrToHdrVividEnable": {
+            "type": "boolean",
+            "description": "HDR转HDR Vivid"
+          },
+          "superResolutionEnable": {
+            "type": "boolean",
+            "description": "是否开启超分辨率"
+          },
+          "outputResolutionOpt": {
+            "type": "integer",
+            "description": "输出分辨率选项",
+            "format": "int32"
+          },
+          "resolution": {
+            "type": "string",
+            "description": "自定义分辨率（如\"1920x1080\"），outputResolutionOpt=8时有效"
+          },
+          "cropSetting": {
+            "type": "integer",
+            "description": "裁剪设置",
+            "format": "int32"
+          },
+          "sceneModel": {
+            "type": "integer",
+            "description": "场景模型",
+            "format": "int32"
+          },
+          "intelliFrameInsertEnable": {
+            "type": "boolean",
+            "description": "是否开启智能插帧"
+          },
+          "frameRate": {
+            "type": "integer",
+            "description": "帧率",
+            "format": "int32"
+          }
+        },
+        "description": "视频增强参数"
+      },
+      "VolumeGainParam": {
+        "type": "object",
+        "properties": {
+          "l": {
+            "type": "number",
+            "description": "左前置 单位：dB"
+          },
+          "r": {
+            "type": "number",
+            "description": "右前置 单位：dB"
+          },
+          "c": {
+            "type": "number",
+            "description": "中置 单位：dB"
+          },
+          "lfe": {
+            "type": "number",
+            "description": "低频效果声道 单位：dB"
+          },
+          "ls": {
+            "type": "number",
+            "description": "左环绕 单位：dB"
+          },
+          "rs": {
+            "type": "number",
+            "description": "右环绕 单位：dB"
+          },
+          "lrs": {
+            "type": "number",
+            "description": "左后环绕 单位：dB"
+          },
+          "rrs": {
+            "type": "number",
+            "description": "右后环绕 单位：dB"
+          },
+          "ltf": {
+            "type": "number",
+            "description": "左前高置 单位：dB"
+          },
+          "rtf": {
+            "type": "number",
+            "description": "右前高置 单位：dB"
+          },
+          "ltr": {
+            "type": "number",
+            "description": "左后高置 单位：dB"
+          },
+          "rtr": {
+            "type": "number",
+            "description": "右后高置 单位：dB"
+          }
+        },
+        "description": "音量增益参数"
+      },
+      "TaskCreateParam": {
+        "required": [
+          "inputUrl"
+        ],
+        "type": "object",
+        "properties": {
+          "taskName": {
+            "type": "string",
+            "description": "任务名称，可选",
+            "example": "xx任务"
+          },
+          "inputUrl": {
+            "type": "string",
+            "description": "源文件下载url",
+            "example": "https://example.com/input.mp4"
+          },
+          "param": {
+            "$ref": "#/components/schemas/TranscodeParam"
+          },
+          "outName": {
+            "type": "string",
+            "description": "输出文件名，不带路径斜杠，不带特殊字符",
+            "example": "output.mp4"
+          },
+          "callerId": {
+            "type": "string",
+            "description": "调用者id，api系统分配，全局唯一，确定调用者的身份",
+            "example": "callerId"
+          },
+          "apiKey": {
+            "type": "string",
+            "description": "api鉴权密钥",
+            "example": "apiKey"
+          }
+        },
+        "description": "创建api转码任务参数"
+      },
+      "ApiResultString": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "string"
+          },
+          "traceId": {
+            "type": "string"
+          }
+        }
+      },
+      "ApiResultListString": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "traceId": {
+            "type": "string"
+          }
+        }
+      },
+      "ApiResultTaskDetailVo": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/TaskDetailVo"
+          },
+          "traceId": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "servers": [
+    {
+      "url": "http://apis.mls-tech.cn",
+      "description": "Generated server url"
+    }
+  ],
+  "paths": {
+    "/path-1": {
+      "x-zuplo-path": {
+        "pathMode": "open-api"
+      },
+      "get": {
+        "summary": "New REST Operation",
+        "description": "",
+        "x-zuplo-route": {
+          "corsPolicy": "none",
+          "handler": {
+            "export": "urlForwardHandler",
+            "module": "$import(@zuplo/runtime)",
+            "options": {
+              "baseUrl": "https://echo.zuplo.io"
+            }
+          },
+          "policies": {
+            "inbound": []
+          }
+        },
+        "operationId": "rest-54f9ceaa"
+      }
+    },
+    "/api/task/restart": {
+      "post": {
+        "tags": [
+          "任务管理"
+        ],
+        "summary": "重启任务",
+        "description": "重启成功或失败的任务（只能重启callerId自己的任务）",
+        "operationId": "restartTask",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskIdListParam"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResultPairBooleanString"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResultVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/task/progress": {
+      "post": {
+        "tags": [
+          "任务管理"
+        ],
+        "summary": "查看任务进度",
+        "description": "根据任务id列表查看任务的进度（只返回callerId自己的任务）",
+        "operationId": "getTaskProgress",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskIdListParam"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResultListProgressVO"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResultVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/task/list": {
+      "post": {
+        "tags": [
+          "任务管理"
+        ],
+        "summary": "分页查询任务列表",
+        "description": "根据条件分页查询任务列表（只返回callerId自己的任务）",
+        "operationId": "queryTaskList",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskQueryParam"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResultPageResponseListTaskVo"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResultVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/task/detailList": {
+      "post": {
+        "tags": [
+          "任务管理"
+        ],
+        "summary": "批量查询任务详情列表",
+        "description": "根据任务id列表批量查询任务详细信息列表（只返回callerId自己的任务）",
+        "operationId": "detailList",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskIdListParam"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResultListTaskDetailVo"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResultVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/task/create": {
+      "post": {
+        "tags": [
+          "任务管理"
+        ],
+        "summary": "创建任务",
+        "description": "创建api转码任务，返回任务id",
+        "operationId": "createTask",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskCreateParam"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResultString"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResultVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/task/cancel": {
+      "post": {
+        "tags": [
+          "任务管理"
+        ],
+        "summary": "取消任务",
+        "description": "取消待调度或处理中的任务，支持批量取消（只能取消callerId自己的任务）",
+        "operationId": "cancelTask",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskIdListParam"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResultPairBooleanString"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResultVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/task/batchCreate": {
+      "post": {
+        "tags": [
+          "任务管理"
+        ],
+        "summary": "批量创建任务",
+        "description": "批量创建api转码任务，返回任务id列表",
+        "operationId": "batchCreateTask",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/TaskCreateParam"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResultListString"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResultVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/task/detail": {
+      "get": {
+        "tags": [
+          "任务管理"
+        ],
+        "summary": "查看任务详情",
+        "description": "根据任务id查看任务详细信息（只能查询callerId自己的任务）",
+        "operationId": "detail",
+        "parameters": [
+          {
+            "name": "taskId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "callerId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "apiKey",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResultTaskDetailVo"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResultVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
