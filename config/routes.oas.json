@@ -317,42 +317,50 @@
         "properties": {
           "audio3dEnable": {
             "type": "boolean",
-            "description": "是否开启2d转3d"
+            "description": "Enable 2D to 3D audio conversion. Defaults to true on the audio task API; the audio path is skipped when disabled",
+            "default": true
           },
           "layout": {
             "type": "string",
-            "description": "输出扬声器布局，可选的有：7.1.4、7.1.0、5.1.4、5.1.0"
+            "description": "Output speaker layout. Allowed values: 7.1.4, 7.1.0, 5.1.4, 5.1.0",
+            "example": "5.1.4"
           },
           "sampleRate": {
             "type": "number",
-            "description": "采样率(Khz)",
-            "format": "double"
+            "description": "Sample rate (kHz)",
+            "format": "double",
+            "example": 44.1
           },
           "format": {
             "type": "string",
-            "description": "输出音频文件类型，可选的有：wav、av3a"
+            "description": "Output audio file type. Allowed values: wav, av3a",
+            "example": "wav"
           },
           "audioBitrate": {
             "type": "string",
-            "description": "音频码率(kbps)"
+            "description": "Audio bitrate (kbps)",
+            "example": "832"
           },
           "useFakeStereo": {
             "type": "boolean",
-            "description": "是否使用假立体声处理"
+            "description": "Use fake stereo processing. Defaults to false",
+            "default": false
           },
           "enableVoiceOverflow": {
             "type": "boolean",
-            "description": "是否开启人声溢出"
+            "description": "Enable vocal overflow. Defaults to false",
+            "default": false
           },
           "enableVolumeGain": {
             "type": "boolean",
-            "description": "是否开启声音增益"
+            "description": "Enable volume gain. Defaults to false",
+            "default": false
           },
           "volumeGainParam": {
             "$ref": "#/components/schemas/VolumeGainParam"
           }
         },
-        "description": "音频增强参数"
+        "description": "Audio enhancement parameters"
       },
       "BaseParam": {
         "type": "object",
@@ -444,51 +452,63 @@
           "colorSpace": {
             "type": "string"
           }
-        }
+        },
+        "description": "Output video metadata"
       },
       "TaskDetailVo": {
         "type": "object",
         "properties": {
           "id": {
             "type": "integer",
+            "description": "Auto-increment database primary key",
             "format": "int64"
           },
           "taskId": {
-            "type": "string"
+            "type": "string",
+            "description": "Globally unique task id"
           },
           "taskName": {
-            "type": "string"
+            "type": "string",
+            "description": "Task name"
           },
           "inputUrl": {
-            "type": "string"
+            "type": "string",
+            "description": "Source video download URL"
           },
           "status": {
             "type": "integer",
+            "description": "Task status: 0 - wait schedule, 1 - downloading, 2 - wait resource, 3 - processing, 4 - uploading, 5 - success, 6 - cancelling, 7 - cancelled, -1 - failed",
             "format": "int32"
           },
           "param": {
-            "$ref": "#/components/schemas/TranscodeParam"
+            "$ref": "#/components/schemas/TranscodeParamVo"
           },
           "queue": {
-            "type": "string"
+            "type": "string",
+            "description": "Task queue name (default is the default queue)"
           },
           "workerIp": {
-            "type": "string"
+            "type": "string",
+            "description": "IP of the worker instance executing this task"
           },
           "inMetadata": {
             "$ref": "#/components/schemas/MediaMetadata"
           },
           "outPath": {
-            "type": "string"
+            "type": "string",
+            "description": "Object storage key of the output file"
           },
           "outName": {
-            "type": "string"
+            "type": "string",
+            "description": "Output file name (user specified outName or the default <source_file_name>_out.<ext>)"
           },
           "outUrl": {
-            "type": "string"
+            "type": "string",
+            "description": "Output video download URL, available after the task succeeds; for private buckets it is a pre-signed URL valid for the configured period"
           },
           "outSize": {
             "type": "integer",
+            "description": "Output file size in bytes",
             "format": "int64"
           },
           "outMetadata": {
@@ -496,53 +516,68 @@
           },
           "failCode": {
             "type": "integer",
+            "description": "Failure code, 0 on success",
             "format": "int32"
           },
           "failLog": {
-            "type": "string"
+            "type": "string",
+            "description": "Failure log, recorded on failure"
           },
           "videoProgress": {
-            "type": "number"
+            "type": "number",
+            "description": "Video processing progress (0-1, null means no progress yet)"
           },
           "audioProgress": {
-            "type": "number"
+            "type": "number",
+            "description": "Audio processing progress (0-1, null means no progress yet, e.g. audio path disabled)"
           },
           "downloadProgress": {
-            "type": "number"
+            "type": "number",
+            "description": "Source video download progress (0-1, null means no progress yet)"
           },
           "uploadProgress": {
-            "type": "number"
+            "type": "number",
+            "description": "Output video upload progress (0-1, null means no progress yet)"
           },
           "message": {
-            "type": "string"
+            "type": "string",
+            "description": "Task processing message (success/failure description)"
           },
           "extra": {
-            "type": "string"
+            "type": "string",
+            "description": "Extra field (reserved)"
           },
           "callerId": {
-            "type": "string"
+            "type": "string",
+            "description": "Caller id"
           },
           "retryCount": {
             "type": "integer",
+            "description": "Retry count",
             "format": "int32"
           },
           "startTime": {
             "type": "string",
+            "description": "Task start time (yyyy-MM-dd HH:mm:ss, GMT+8)",
             "format": "date-time"
           },
           "endTime": {
             "type": "string",
+            "description": "Task end time (success/failure/cancel time)",
             "format": "date-time"
           },
           "createTime": {
             "type": "string",
+            "description": "Task creation time",
             "format": "date-time"
           },
           "updateTime": {
             "type": "string",
+            "description": "Task last update time",
             "format": "date-time"
           }
-        }
+        },
+        "description": "Task detail (full version, including transcode params and input/output metadata)"
       },
       "TranscodeParam": {
         "type": "object",
@@ -624,54 +659,54 @@
         "properties": {
           "l": {
             "type": "number",
-            "description": "左前置 单位：dB"
+            "description": "Left front channel gain (dB)"
           },
           "r": {
             "type": "number",
-            "description": "右前置 单位：dB"
+            "description": "Right front channel gain (dB)"
           },
           "c": {
             "type": "number",
-            "description": "中置 单位：dB"
+            "description": "Center channel gain (dB)"
           },
           "lfe": {
             "type": "number",
-            "description": "低频效果声道 单位：dB"
+            "description": "Low frequency effect channel gain (dB)"
           },
           "ls": {
             "type": "number",
-            "description": "左环绕 单位：dB"
+            "description": "Left surround channel gain (dB)"
           },
           "rs": {
             "type": "number",
-            "description": "右环绕 单位：dB"
+            "description": "Right surround channel gain (dB)"
           },
           "lrs": {
             "type": "number",
-            "description": "左后环绕 单位：dB"
+            "description": "Left rear surround channel gain (dB)"
           },
           "rrs": {
             "type": "number",
-            "description": "右后环绕 单位：dB"
+            "description": "Right rear surround channel gain (dB)"
           },
           "ltf": {
             "type": "number",
-            "description": "左前高置 单位：dB"
+            "description": "Left top front channel gain (dB)"
           },
           "rtf": {
             "type": "number",
-            "description": "右前高置 单位：dB"
+            "description": "Right top front channel gain (dB)"
           },
           "ltr": {
             "type": "number",
-            "description": "左后高置 单位：dB"
+            "description": "Left top rear channel gain (dB)"
           },
           "rtr": {
             "type": "number",
-            "description": "右后高置 单位：dB"
+            "description": "Right top rear channel gain (dB)"
           }
         },
-        "description": "音量增益参数"
+        "description": "Volume gain parameters"
       },
       "TaskCreateParam": {
         "required": [
@@ -766,6 +801,332 @@
             "type": "string"
           }
         }
+      },
+      "SuperResolutionParam": {
+        "type": "object",
+        "properties": {
+          "superResolutionEnable": {
+            "type": "boolean",
+            "description": "Enable super resolution. Defaults to true on the super resolution task API",
+            "default": true
+          },
+          "outputResolutionOpt": {
+            "type": "integer",
+            "description": "Output resolution option: 1 - original, 2 - 2x upscale, 3 - 4x upscale, 4 - 1280x720 (HD), 5 - 1920x1080 (FHD), 6 - 2560x1440 (QHD), 7 - 3840x2160 (4K), 8 - custom",
+            "format": "int32",
+            "example": 7
+          },
+          "resolution": {
+            "type": "string",
+            "description": "Custom resolution such as \"1920x1080\", required when outputResolutionOpt is 8",
+            "example": "1920x1080"
+          },
+          "cropSetting": {
+            "type": "integer",
+            "description": "Crop setting: 1 - auto fit (keep aspect ratio), 2 - auto crop",
+            "format": "int32",
+            "example": 1
+          },
+          "sceneModel": {
+            "type": "integer",
+            "description": "Scene model: 1 - real-world scene, 2 - anime scene",
+            "format": "int32",
+            "example": 1
+          }
+        },
+        "description": "Video super resolution parameters"
+      },
+      "SuperResolutionTaskCreateParam": {
+        "required": [
+          "inputUrl",
+          "param"
+        ],
+        "type": "object",
+        "properties": {
+          "taskName": {
+            "type": "string",
+            "description": "Task name, optional",
+            "example": "super-resolution-demo"
+          },
+          "inputUrl": {
+            "type": "string",
+            "description": "Source video download URL (http/https)",
+            "example": "https://example.com/input.mp4"
+          },
+          "param": {
+            "$ref": "#/components/schemas/SuperResolutionParam"
+          },
+          "outName": {
+            "type": "string",
+            "description": "Output file name, no path separators or special characters. Defaults to <source_file_name>_out.<ext> when omitted",
+            "example": "output.mp4"
+          },
+          "callerId": {
+            "type": "string",
+            "description": "Caller id assigned by the API system, globally unique",
+            "example": "callerId"
+          },
+          "apiKey": {
+            "type": "string",
+            "description": "API key for authentication, compared with api.api-key configured on the server",
+            "example": "apiKey"
+          }
+        },
+        "description": "Create video super resolution task request"
+      },
+      "SdrToHdrParam": {
+        "type": "object",
+        "properties": {
+          "sdrToHdrEnable": {
+            "type": "boolean",
+            "description": "Enable SDR to HDR conversion. Defaults to true on the SDR-to-HDR task API",
+            "default": true
+          },
+          "hdrOpt": {
+            "type": "integer",
+            "description": "HDR option: 1 - HDR, 2 - HDR to HDR Vivid",
+            "format": "int32",
+            "example": 1
+          },
+          "hdrMode": {
+            "type": "string",
+            "description": "HDR transfer format: PQ or HLG",
+            "example": "PQ"
+          },
+          "hdrLuminosity": {
+            "type": "integer",
+            "description": "HDR peak luminosity (nits). Allowed values: 1000, 850, 750, 550, 260, 203",
+            "format": "int32",
+            "example": 1000
+          },
+          "hdrToHdrVividEnable": {
+            "type": "boolean",
+            "description": "Enable HDR to HDR Vivid conversion for HDR input. Defaults to false",
+            "default": false
+          }
+        },
+        "description": "SDR to HDR parameters"
+      },
+      "SdrToHdrTaskCreateParam": {
+        "required": [
+          "inputUrl",
+          "param"
+        ],
+        "type": "object",
+        "properties": {
+          "taskName": {
+            "type": "string",
+            "description": "Task name, optional",
+            "example": "sdr-to-hdr-demo"
+          },
+          "inputUrl": {
+            "type": "string",
+            "description": "Source video download URL (http/https)",
+            "example": "https://example.com/input.mp4"
+          },
+          "param": {
+            "$ref": "#/components/schemas/SdrToHdrParam"
+          },
+          "outName": {
+            "type": "string",
+            "description": "Output file name, no path separators or special characters. Defaults to <source_file_name>_out.<ext> when omitted",
+            "example": "output.mp4"
+          },
+          "callerId": {
+            "type": "string",
+            "description": "Caller id assigned by the API system, globally unique",
+            "example": "callerId"
+          },
+          "apiKey": {
+            "type": "string",
+            "description": "API key for authentication, compared with api.api-key configured on the server",
+            "example": "apiKey"
+          }
+        },
+        "description": "Create SDR-to-HDR task request"
+      },
+      "TaskIdParam": {
+        "required": [
+          "taskId"
+        ],
+        "type": "object",
+        "properties": {
+          "taskId": {
+            "type": "string",
+            "description": "Task id returned by the create API, globally unique"
+          },
+          "callerId": {
+            "type": "string",
+            "description": "Caller id assigned by the API system, globally unique",
+            "example": "callerId"
+          },
+          "apiKey": {
+            "type": "string",
+            "description": "API key for authentication, compared with api.api-key configured on the server",
+            "example": "apiKey"
+          }
+        },
+        "description": "Single task request with authentication fields"
+      },
+      "ApiResultProgressVO": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/ProgressVO"
+          },
+          "traceId": {
+            "type": "string"
+          }
+        }
+      },
+      "IntelliFrameParam": {
+        "type": "object",
+        "properties": {
+          "intelliFrameInsertEnable": {
+            "type": "boolean",
+            "description": "Enable intelligent frame interpolation. Defaults to true on the frame interpolation task API",
+            "default": true
+          },
+          "frameRate": {
+            "type": "integer",
+            "description": "Target frame rate (fps), max 60. Must not be lower than the source frame rate",
+            "format": "int32",
+            "example": 50
+          }
+        },
+        "description": "Intelligent frame interpolation parameters"
+      },
+      "IntelliFrameTaskCreateParam": {
+        "required": [
+          "inputUrl",
+          "param"
+        ],
+        "type": "object",
+        "properties": {
+          "taskName": {
+            "type": "string",
+            "description": "Task name, optional",
+            "example": "frame-interpolation-demo"
+          },
+          "inputUrl": {
+            "type": "string",
+            "description": "Source video download URL (http/https)",
+            "example": "https://example.com/input.mp4"
+          },
+          "param": {
+            "$ref": "#/components/schemas/IntelliFrameParam"
+          },
+          "outName": {
+            "type": "string",
+            "description": "Output file name, no path separators or special characters. Defaults to <source_file_name>_out.<ext> when omitted",
+            "example": "output.mp4"
+          },
+          "callerId": {
+            "type": "string",
+            "description": "Caller id assigned by the API system, globally unique",
+            "example": "callerId"
+          },
+          "apiKey": {
+            "type": "string",
+            "description": "API key for authentication, compared with api.api-key configured on the server",
+            "example": "apiKey"
+          }
+        },
+        "description": "Create video frame interpolation task request"
+      },
+      "AudioTaskCreateParam": {
+        "required": [
+          "inputUrl",
+          "param"
+        ],
+        "type": "object",
+        "properties": {
+          "taskName": {
+            "type": "string",
+            "description": "Task name, optional",
+            "example": "audio-enhancement-demo"
+          },
+          "inputUrl": {
+            "type": "string",
+            "description": "Source video download URL (http/https)",
+            "example": "https://example.com/input.mp4"
+          },
+          "param": {
+            "$ref": "#/components/schemas/AudioEnhanceParam"
+          },
+          "outName": {
+            "type": "string",
+            "description": "Output file name, no path separators or special characters. Defaults to <source_file_name>_out.<ext> when omitted",
+            "example": "output.mp4"
+          },
+          "callerId": {
+            "type": "string",
+            "description": "Caller id assigned by the API system, globally unique",
+            "example": "callerId"
+          },
+          "apiKey": {
+            "type": "string",
+            "description": "API key for authentication, compared with api.api-key configured on the server",
+            "example": "apiKey"
+          }
+        },
+        "description": "Create audio enhancement task request"
+      },
+      "BaseParamVo": {
+        "type": "object",
+        "properties": {
+          "format": {
+            "type": "string",
+            "description": "Output container format: origin (same as source), mp4, mov or ts",
+            "example": "origin"
+          },
+          "codec": {
+            "type": "string",
+            "description": "Video codec: H.265 or H.264",
+            "example": "H.265"
+          },
+          "bitrateControl": {
+            "type": "integer",
+            "description": "Bitrate control: 0 - keep original, 1 - VBR, 2 - CBR, 3 - CRF, 4 - custom, 5 - recommended",
+            "format": "int32",
+            "example": 0
+          },
+          "bitrate": {
+            "type": "integer",
+            "description": "Target video bitrate (Kb/s)",
+            "format": "int32",
+            "example": 30
+          }
+        },
+        "description": "Basic video output settings"
+      },
+      "TranscodeParamVo": {
+        "type": "object",
+        "properties": {
+          "baseParam": {
+            "$ref": "#/components/schemas/BaseParamVo"
+          },
+          "sdrToHdrParam": {
+            "$ref": "#/components/schemas/SdrToHdrParam"
+          },
+          "superResolutionParam": {
+            "$ref": "#/components/schemas/SuperResolutionParam"
+          },
+          "intelliFrameParam": {
+            "$ref": "#/components/schemas/IntelliFrameParam"
+          },
+          "audioEnhanceParam": {
+            "$ref": "#/components/schemas/AudioEnhanceParam"
+          }
+        },
+        "description": "Transcode parameters of the task (v1 split view)"
       }
     }
   },
@@ -776,210 +1137,19 @@
     }
   ],
   "paths": {
-    "/path-1": {
-      "x-zuplo-path": {
-        "pathMode": "open-api"
-      },
-      "get": {
-        "summary": "New REST Operation",
-        "description": "",
-        "x-zuplo-route": {
-          "corsPolicy": "none",
-          "handler": {
-            "export": "urlForwardHandler",
-            "module": "$import(@zuplo/runtime)",
-            "options": {
-              "baseUrl": "https://echo.zuplo.io"
-            }
-          },
-          "policies": {
-            "inbound": []
-          }
-        },
-        "operationId": "rest-54f9ceaa"
-      }
-    },
-    "/api/task/restart": {
+    "/api/v1/task/superResolution": {
       "post": {
         "tags": [
-          "任务管理"
+          "Task Management V1"
         ],
-        "summary": "重启任务",
-        "description": "重启成功或失败的任务（只能重启callerId自己的任务）",
-        "operationId": "restartTask",
+        "summary": "Create super resolution task",
+        "description": "Create a video super resolution task and return the task id. The source video is downloaded from inputUrl, upscaled by the super resolution model according to the resolution option, and the output file is uploaded to cloud storage. Output settings use server side defaults: source container format, H.265 codec, keep original bitrate",
+        "operationId": "createSuperResolutionTask",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/TaskIdListParam"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResultPairBooleanString"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResultVoid"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/task/progress": {
-      "post": {
-        "tags": [
-          "任务管理"
-        ],
-        "summary": "查看任务进度",
-        "description": "根据任务id列表查看任务的进度（只返回callerId自己的任务）",
-        "operationId": "getTaskProgress",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/TaskIdListParam"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResultListProgressVO"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResultVoid"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/task/list": {
-      "post": {
-        "tags": [
-          "任务管理"
-        ],
-        "summary": "分页查询任务列表",
-        "description": "根据条件分页查询任务列表（只返回callerId自己的任务）",
-        "operationId": "queryTaskList",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/TaskQueryParam"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResultPageResponseListTaskVo"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResultVoid"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/task/detailList": {
-      "post": {
-        "tags": [
-          "任务管理"
-        ],
-        "summary": "批量查询任务详情列表",
-        "description": "根据任务id列表批量查询任务详细信息列表（只返回callerId自己的任务）",
-        "operationId": "detailList",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/TaskIdListParam"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResultListTaskDetailVo"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResultVoid"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/task/create": {
-      "post": {
-        "tags": [
-          "任务管理"
-        ],
-        "summary": "创建任务",
-        "description": "创建api转码任务，返回任务id",
-        "operationId": "createTask",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/TaskCreateParam"
+                "$ref": "#/components/schemas/SuperResolutionTaskCreateParam"
               }
             }
           },
@@ -1009,19 +1179,145 @@
         }
       }
     },
-    "/api/task/cancel": {
+    "/api/v1/task/sdrToHdr": {
       "post": {
         "tags": [
-          "任务管理"
+          "Task Management V1"
         ],
-        "summary": "取消任务",
-        "description": "取消待调度或处理中的任务，支持批量取消（只能取消callerId自己的任务）",
-        "operationId": "cancelTask",
+        "summary": "Create SDR-to-HDR task",
+        "description": "Create a video SDR-to-HDR enhancement task and return the task id. The source video is downloaded from inputUrl, converted from SDR to HDR (or from HDR to HDR Vivid), and the output file is uploaded to cloud storage. Output settings use server side defaults: source container format, H.265 codec, keep original bitrate",
+        "operationId": "createSdrToHdrTask",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/TaskIdListParam"
+                "$ref": "#/components/schemas/SdrToHdrTaskCreateParam"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResultString"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResultVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/task/progress": {
+      "post": {
+        "tags": [
+          "Task Management V1"
+        ],
+        "summary": "Get task progress",
+        "description": "Get the progress of a task by task id (video/audio/download/upload progress). Only the caller's own tasks can be queried; a task that does not exist or belongs to another caller returns 40401 task not found",
+        "operationId": "c73a4830-efed-4008-b89e-f13dab437edb",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskIdParam"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResultProgressVO"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResultVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/task/intelliFrame": {
+      "post": {
+        "tags": [
+          "Task Management V1"
+        ],
+        "summary": "Create frame interpolation task",
+        "description": "Create a video intelligent frame interpolation task and return the task id. The source video is downloaded from inputUrl, interpolated to the target frame rate, and the output file is uploaded to cloud storage. Output settings use server side defaults: source container format, H.265 codec, keep original bitrate",
+        "operationId": "createIntelliFrameTask",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IntelliFrameTaskCreateParam"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResultString"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResultVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/task/cancel": {
+      "post": {
+        "tags": [
+          "Task Management V1"
+        ],
+        "summary": "Cancel task",
+        "description": "Cancel a waiting or running task by task id. Only the caller's own tasks can be cancelled. Returns a pair of success flag and message",
+        "operationId": "d4474b64-c95f-41b3-a935-44592650b4f3",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskIdParam"
               }
             }
           },
@@ -1051,22 +1347,19 @@
         }
       }
     },
-    "/api/task/batchCreate": {
+    "/api/v1/task/audio": {
       "post": {
         "tags": [
-          "任务管理"
+          "Task Management V1"
         ],
-        "summary": "批量创建任务",
-        "description": "批量创建api转码任务，返回任务id列表",
-        "operationId": "batchCreateTask",
+        "summary": "Create audio enhancement task",
+        "description": "Create an audio enhancement task and return the task id. Only the audio enhancement param is passed (no video enhancement params): the source video is downloaded from inputUrl, the audio track is converted to the target speaker layout (2D to 3D), merged with the re-encoded video, and the output file is uploaded to cloud storage",
+        "operationId": "createAudioTask",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "type": "array",
-                "items": {
-                  "$ref": "#/components/schemas/TaskCreateParam"
-                }
+                "$ref": "#/components/schemas/AudioTaskCreateParam"
               }
             }
           },
@@ -1078,7 +1371,7 @@
             "content": {
               "*/*": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResultListString"
+                  "$ref": "#/components/schemas/ApiResultString"
                 }
               }
             }
@@ -1096,18 +1389,19 @@
         }
       }
     },
-    "/api/task/detail": {
+    "/api/v1/task/detail": {
       "get": {
         "tags": [
-          "任务管理"
+          "Task Management V1"
         ],
-        "summary": "查看任务详情",
-        "description": "根据任务id查看任务详细信息（只能查询callerId自己的任务）",
-        "operationId": "detail",
+        "summary": "Get task detail",
+        "description": "Get the detail of a task by task id (full version, including transcode params and input/output metadata). Only the caller's own tasks can be queried; a task that does not exist or belongs to another caller returns 40401 task not found",
+        "operationId": "a3b9215b-4aac-4276-825e-2a7bdb9eb7bc",
         "parameters": [
           {
             "name": "taskId",
             "in": "query",
+            "description": "Task id returned by the create API",
             "required": true,
             "schema": {
               "type": "string"
@@ -1116,6 +1410,7 @@
           {
             "name": "callerId",
             "in": "query",
+            "description": "Caller id assigned by the API system",
             "required": true,
             "schema": {
               "type": "string"
@@ -1124,6 +1419,7 @@
           {
             "name": "apiKey",
             "in": "query",
+            "description": "API key for authentication",
             "required": true,
             "schema": {
               "type": "string"
