@@ -1,0 +1,83 @@
+---
+title: Authentication
+sidebar_icon: lock
+description: How callerId and apiKey credentials work, and how task ownership is enforced.
+---
+
+The Audio Video API uses a simple credential pair for authentication and tenant isolation. There are no OAuth flows, tokens, or sessions — every request carries your credentials directly.
+
+## Credentials
+
+| Field | Description |
+| ----- | ----------- |
+| `callerId` | Identifies you as the API caller. Assigned by the platform team and globally unique. Tasks are scoped to this id. |
+| `apiKey` | Secret key paired with your `callerId`. Compared against the key configured on the server. |
+
+Both values are issued by the platform team. If you don't have credentials yet, contact the API administrators.
+
+## Where to put the credentials
+
+Every endpoint requires both fields. Their location depends on the HTTP method:
+
+- **POST endpoints** — pass `callerId` and `apiKey` as top-level fields in the JSON request body. This applies to all task creation endpoints, `progress`, and `cancel`.
+- **GET endpoints** — pass them as query parameters. This applies to `detail`.
+
+```bash title="POST: credentials in the JSON body"
+curl -X POST 'http://apis.mls-tech.cn/api/v1/task/progress' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "taskId": "3f2b8c4d5e6f7a8b9c0d1e2f3a4b5c6d",
+    "callerId": "your-caller-id",
+    "apiKey": "your-api-key"
+  }'
+```
+
+```bash title="GET: credentials as query parameters"
+curl -G 'http://apis.mls-tech.cn/api/v1/task/detail' \
+  --data-urlencode 'taskId=3f2b8c4d5e6f7a8b9c0d1e2f3a4b5c6d' \
+  --data-urlencode 'callerId=your-caller-id' \
+  --data-urlencode 'apiKey=your-api-key'
+```
+
+## How authentication works
+
+The server validates credentials before any business logic runs:
+
+1. `callerId` must be present. An empty `callerId` fails with `40100`.
+2. The submitted `apiKey` is compared with the key configured on the server. A mismatch fails with `40100`.
+
+A failed check returns an error envelope and the request is not processed:
+
+```json title="40100 Unauthorized"
+{
+  "code": 40100,
+  "message": "apiKey错误",
+  "data": null,
+  "traceId": null
+}
+```
+
+:::note
+
+Error `message` values for authentication and legacy paths may be returned in Chinese (for example, `apiKey错误` means "apiKey is wrong"). Always branch on the `code` field rather than parsing the message. See [Errors & Status Codes](./errors).
+
+:::
+
+## Task ownership
+
+`callerId` is not just an authentication token — it defines data ownership:
+
+- **Query isolation** — The `detail` and `progress` endpoints only return tasks whose `callerId` matches yours. A task that doesn't exist _or_ belongs to another caller is indistinguishable: both return `40401`.
+- **Operation isolation** — The `cancel` endpoint only cancels your own tasks. Another caller's task id is treated as "no matching cancellable task".
+
+This means task ids can be shared freely (for example in support conversations) without leaking data between callers.
+
+## Security recommendations
+
+:::warning
+
+- Keep your `apiKey` secret. Store it in a secrets manager or environment variable, never in client-side code or version control.
+- Prefer `https` endpoints in production to keep the key encrypted in transit.
+- If your key is compromised, contact the platform team immediately to rotate it.
+
+:::

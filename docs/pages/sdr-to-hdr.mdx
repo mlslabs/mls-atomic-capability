@@ -1,0 +1,87 @@
+---
+title: SDR to HDR
+sidebar_icon: sun-medium
+description: Convert standard dynamic range video to HDR (PQ/HLG) or upgrade HDR to HDR Vivid.
+---
+
+The SDR-to-HDR capability converts standard dynamic range (SDR) video into high dynamic range (HDR) video using an AI mapping model. It also supports upgrading existing HDR input to **HDR Vivid** (the Chinese HDR standard) in the same task.
+
+**Endpoint:** `POST /api/v1/task/sdrToHdr`
+
+## Request
+
+```bash title="Create an SDR-to-HDR task"
+curl -X POST 'http://apis.mls-tech.cn/api/v1/task/sdrToHdr' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "taskName": "sdr-demo-01",
+    "inputUrl": "https://example.com/source-sdr.mp4",
+    "param": {
+      "sdrToHdrEnable": true,
+      "hdrOpt": 1,
+      "hdrMode": "PQ",
+      "hdrLuminosity": 1000,
+      "hdrToHdrVividEnable": false
+    },
+    "outName": "source-hdr.mp4",
+    "callerId": "your-caller-id",
+    "apiKey": "your-api-key"
+  }'
+```
+
+Top-level request fields (`taskName`, `inputUrl`, `param`, `outName`, `callerId`, `apiKey`) are common to all capabilities and are documented in the [Quickstart](./quickstart). The `param` object is capability-specific:
+
+| Field | Type | Required | Description |
+| ----- | ---- | -------- | ----------- |
+| `sdrToHdrEnable` | boolean | No (default `true`) | Master switch. When `false`, no HDR conversion is applied — the video is only re-encoded with the default output settings. |
+| `hdrOpt` | integer | Recommended | HDR option: `1` = HDR, `2` = HDR to HDR Vivid. |
+| `hdrMode` | string | Recommended | HDR transfer format: `PQ` or `HLG`. |
+| `hdrLuminosity` | integer | Recommended | Peak luminosity in nits. Allowed values: `1000`, `850`, `750`, `550`, `260`, `203`. |
+| `hdrToHdrVividEnable` | boolean | No (default `false`) | When the source is already HDR, set `true` to convert it to HDR Vivid. |
+
+## Choosing the parameters
+
+### SDR source
+
+For standard dynamic range input, use `hdrOpt: 1` and pick a transfer format:
+
+- **`PQ`** (SMPTE ST 2084) — the dominant format for streaming and UHD Blu-ray; best for displays viewed in controlled lighting.
+- **`HLG`** (Hybrid Log-Gamma) — broadcast-friendly and backward compatible with SDR displays.
+
+Then choose `hdrLuminosity` to match the target display class — `1000` nits for flagship HDR10 displays, `550`/`260`/`203` for mid-range panels.
+
+```json title="SDR → HDR10 (PQ)"
+{
+  "sdrToHdrEnable": true,
+  "hdrOpt": 1,
+  "hdrMode": "PQ",
+  "hdrLuminosity": 1000
+}
+```
+
+### HDR source
+
+If the input is already HDR (PQ or HLG) and you want HDR Vivid instead, enable the vivid path:
+
+```json title="HDR → HDR Vivid"
+{
+  "sdrToHdrEnable": true,
+  "hdrOpt": 2,
+  "hdrToHdrVividEnable": true
+}
+```
+
+## Output
+
+The output uses the platform defaults — same container as the source, H.265 (HEVC) video codec, original bitrate. Verify the result by comparing metadata in the task detail:
+
+- `inMetadata.hdrFormat` — the source's dynamic range (for example `SDR`)
+- `outMetadata.hdrFormat` — the converted range (for example `HDR10`), along with `colorTransfer`/`colorPrimaries`/`colorSpace` describing the HDR signal
+
+See [Output Files & Storage](./output-files) for download URLs and naming.
+
+## Requirements & limits
+
+- Source container/codec must be supported — see [Input Requirements](./formats).
+- SDR sources are recommended; HDR sources are converted only when `hdrOpt`/`hdrToHdrVividEnable` select the vivid path.
+- The video is re-encoded to H.265 regardless of the source codec — expect a change in `codec` in the output metadata.

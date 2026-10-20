@@ -1,0 +1,93 @@
+---
+title: Input Requirements
+sidebar_icon: file-video
+description: Supported source video containers, codecs, audio constraints, and inputUrl rules.
+---
+
+The platform fetches your source video over HTTP, analyzes it with `mediainfo`, and rejects files it cannot process. This page lists exactly what is accepted so you can validate sources before submitting tasks.
+
+## `inputUrl` rules
+
+- Must be a publicly reachable `http://` or `https://` download URL.
+- The worker downloads the file **before** processing starts; the URL must remain valid until the download completes (status `1` finishes).
+- The source file name is parsed from the URL (query strings are stripped, the last path segment is URL-decoded). If the URL has no recognizable file name, a default name like `input_{taskId}.mp4` is used.
+- Range-chunked downloading is used when the server supports it; otherwise the file is streamed.
+
+:::tip
+
+Host the source on stable object storage with enough TTL. If the download fails (expired pre-signed URL, 403, timeout), the task fails with `failCode 105`.
+
+:::
+
+## Supported container formats
+
+| Container | Typical file extensions |
+| --------- | ----------------------- |
+| MPEG-4 | `.mp4`, `.mov`, `.f4v` |
+| Matroska | `.mkv`, `.webm` |
+| MPEG-TS | `.ts` |
+| Flash Video | `.flv` |
+| MXF | `.mxf` |
+| WebM | `.webm` |
+
+## Supported video codecs
+
+| Codec | Also known as |
+| ----- | ------------- |
+| AVC | H.264 |
+| HEVC | H.265 |
+| H.263 | |
+| VP8 / VP9 | |
+| Theora | |
+| MPEG Video | MPEG-1 / MPEG-2 |
+| Sorenson Spark | |
+| DV | |
+| MPEG-4 Visual | |
+| ProRes | |
+
+An unsupported container or video codec fails the task during metadata analysis with `failCode 101` (metadata not supported).
+
+## Audio requirements
+
+Audio constraints depend on whether the task enables 2D-to-3D audio conversion (`audio3dEnable`):
+
+### Without audio enhancement (video capabilities)
+
+Video-only tasks (`sdrToHdr`, `superResolution`, `intelliFrame`, and `audio` tasks with `audio3dEnable: false`) re-encode the audio along with the video. The following audio codecs are **not supported** in this mode:
+
+`AMR`, `WMA`, `Opus`, `PCM`, `FLAC`, `DTS`, `Vorbis`
+
+Other common codecs — for example AAC, AC-3, and MP3 — are accepted.
+
+:::note
+
+If your source uses one of the unsupported codecs, enabling the audio enhancement path (`audio3dEnable: true` via the [audio endpoint](./audio-enhancement)) can work around it, since the 2D-to-3D tool accepts PCM, AAC, MP3, and FLAC input.
+
+:::
+
+### With audio enhancement (`audio3dEnable: true`)
+
+The 2D-to-3D conversion imposes stricter rules on the source audio track:
+
+- **Codec** must be one of: `PCM`, `AAC`, `MP3`, `FLAC`
+- **Channels** must be mono (1) or stereo (2)
+
+Sources outside these limits fail during metadata analysis with `failCode 101`.
+
+## Metadata validation order
+
+When a worker picks up your task, validation happens in this order — the first failure determines the `failCode`:
+
+1. `inputUrl` present → otherwise `failCode 100` (parameter)
+2. Download succeeds → otherwise `failCode 105` (download)
+3. Container format supported → otherwise `failCode 101` (metadata)
+4. Video codec supported → otherwise `failCode 101` (metadata)
+5. Audio codec valid for the chosen mode → otherwise `failCode 101` (metadata)
+
+## Recommended source settings
+
+For best results:
+
+- Use H.264 (AVC) or H.265 (HEVC) in an MP4 or MOV container.
+- For audio enhancement tasks, encode audio as stereo AAC.
+- Ensure the file is complete (not still being uploaded) and reachable without redirects that break pre-signed URLs.

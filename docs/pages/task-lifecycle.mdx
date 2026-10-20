@@ -1,0 +1,133 @@
+---
+title: Task Lifecycle
+sidebar_icon: refresh-cw
+description: Task statuses, the processing pipeline, progress reporting, and cancellation semantics.
+---
+
+Every task — regardless of capability — moves through the same state machine. Understanding the states and progress fields makes it easy to build reliable polling logic.
+
+## Task statuses
+
+The `status` field appears in both the progress and detail responses:
+
+| Code | Status | Description |
+| ---- | ------ | ----------- |
+| `0` | Waiting for schedule | Task is created and queued. A worker will pick it up when a slot is free. |
+| `1` | Downloading | Worker is fetching the source video from `inputUrl`. |
+| `2` | Waiting for resource | Task is waiting for compute resources (for example a GPU) to become available. |
+| `3` | Processing | Video (and optionally audio) enhancement is running. |
+| `4` | Uploading | Processing finished; the output file is being uploaded to cloud storage. |
+| `5` | Success | Task finished successfully. `outUrl` in the detail response is ready. |
+| `6` | Cancelling | A cancel request was received; the worker is stopping the task. |
+| `7` | Cancelled | Task was cancelled and has stopped. This is a final state. |
+| `-1` | Failed | Task failed. See `failCode`, `failLog`, and `message` for the reason. |
+
+`5`, `7`, and `-1` are final states — a task never leaves them.
+
+## Processing pipeline
+
+After you create a task, the platform executes the following steps:
+
+1. **Queueing** — The task enters a priority queue and waits for a free worker slot (status `0` → `2`).
+2. **Download** — The worker downloads the source video from `inputUrl` into its working directory (status `1`). Download progress is reported in real time.
+3. **Metadata analysis** — The file is probed with `mediainfo`. The container format, codecs, and other properties are validated and stored as `inMetadata`. Unsupported input fails the task with `failCode 101`.
+4. **Processing** (status `3`) — Two paths run in parallel:
+   - **Video path**: the source is sliced into ~5-minute segments, all segments are transcoded in parallel by the enhancement model, then merged back into a single video.
+   - **Audio path** (only for audio enhancement tasks): the audio track is converted from 2D to 3D using the target speaker layout.
+   - If both paths produced output, they are merged into the final file; otherwise the video output becomes the final file directly.
+5. **Upload** (status `4`) — The final file is uploaded to cloud object storage with real-time upload progress.
+6. **Completion** — The task is marked `5` (success), the output metadata is probed and stored, and `outUrl` is written. All intermediate files on the worker are deleted.
+
+If any step fails, the task is marked `-1` with a `failCode` indicating the failing stage — see [Errors & Status Codes](./errors).
+
+## Progress fields
+
+The progress endpoint (`POST /api/v1/task/progress`) returns four progress values. Each is a fraction in the range `[0, 1]`:
+
+| Field | Stage | Notes |
+| ----- | ----- | ----- |
+| `downloadProgress` | Source download | Reported while the source file is being downloaded. |
+| `videoProgress` | Video processing | Accumulates as transcoded segment durations add up. |
+| `audioProgress` | Audio processing | Only present for audio enhancement tasks. |
+| `uploadProgress` | Output upload | Reported while the result file is being uploaded. |
+
+:::note
+
+`null` means "no progress reported yet for this stage" — for example, `uploadProgress` is `null` until uploading starts. A value of `0` is valid progress data, not the same as `null`. When rendering progress bars, treat `null` as "not started" and `0` as "started, 0% complete".
+
+:::
+
+Progress updates are flushed to the database about once per second, and download/upload callbacks are throttled to 2-second intervals, so polled values can lag slightly behind reality.
+
+### Which progress applies when
+
+| Task type | downloadProgress | videoProgress | audioProgress | uploadProgress |
+| --------- | ---------------- | ------------- | ------------- | -------------- |
+| Video-only capabilities | ✓ | ✓ | `null` | ✓ |
+| Audio enhancement (`audio3dEnable: true`) | ✓ | ✓ | ✓ | ✓ |
+| Audio enhancement (`audio3dEnable: false`) | ✓ | ✓ | `null` | ✓ |
+
+## Cancellation
+
+Cancel a task with `POST /api/v1/task/cancel`. Cancellation is cooperative and asynchronous:
+
+1. If the task is in a cancellable state (`0`, `1`, `2`, `3`, or `4`), its status is set to `6` (cancelling) and a cancel signal is sent.
+2. If the task is already running, the worker terminates its child processes (ffmpeg, model tools) and marks the task `7` (cancelled).
+3. If the task is still queued, the worker marks it `7` as soon as it dequeues the task.
+
+```ansi title="Cancellation flow"
+[2m   cancel request                 worker stops processes[0m
+[36m┌────────────────────┐[0m          [36m┌────────────────────┐[0m
+[33m│ status → 6          │[0m [32m──────▶[0m [32m│ status → 7          │[0m
+[33m│ (cancelling)        │[0m          [32m│ (cancelled, final)  │[0m
+[36m└────────────────────┘[0m          [36m└────────────────────┘[0m
+```
+
+The cancel response is a pair of success flag and message:
+
+```json title="Cancel response"
+{
+  "code": 0,
+  "message": "success",
+  "data": { "key": true, "value": "Successfully cancelled 1/1 tasks" },
+  "traceId": null
+}
+```
+
+If no task matches (wrong id, not your task, or already in a final state), the API returns an error — see [Errors & Status Codes](./errors).
+
+:::tip
+
+Completed (`5`), failed (`-1`), and cancelled (`7`) tasks cannot be cancelled. To reprocess a source file, create a new task.
+
+:::
+
+## Polling pattern
+
+A typical integration polls `progress` until the task reaches a final state, then calls `detail` once:
+
+```bash title="Poll until a final status, then fetch the detail"
+# poll every few seconds until status is 5, 7, or -1
+curl -X POST 'http://apis.mls-tech.cn/api/v1/task/progress' \
+  -H 'Content-Type: application/json' \
+  -d '{ "taskId": "...", "callerId": "...", "apiKey": "..." }'
+
+# once finished, fetch the full detail (outUrl, metadata, failCode, ...)
+curl -G 'http://apis.mls-tech.cn/api/v1/task/detail' \
+  --data-urlencode 'taskId=...' \
+  --data-urlencode 'callerId=...' \
+  --data-urlencode 'apiKey=...'
+```
+
+There is no webhook/callback mechanism in v1 — polling is the supported way to track tasks.
+
+## Time fields
+
+All timestamps in task responses use the format `yyyy-MM-dd HH:mm:ss` in GMT+8:
+
+| Field | Meaning |
+| ----- | ------- |
+| `createTime` | When the task was created. |
+| `startTime` | When a worker began processing (start of download). |
+| `endTime` | When the task reached its final state (success, failure, or cancellation). |
+| `updateTime` | Last status/progress update. |

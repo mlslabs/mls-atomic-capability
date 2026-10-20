@@ -1,153 +1,78 @@
 ---
-description: Welcome to your new Zudoku documentation site.
-sidebar_label: My Developer Portal
-sidebar_icon: panel-top
-category: ""
+title: Introduction
+sidebar_label: Overview
+sidebar_icon: house
+description: Overview of the Audio Video API platform for UHD transcoding and AI media enhancement.
 ---
 
-<div>
-  <img src="/banner.svg" className="dark:hidden" />
-  <img src="/banner-dark.svg" className="hidden dark:block" />
-</div>
+The Audio Video API is an asynchronous media processing platform for ultra-high-definition (UHD) video and audio enhancement. You submit a source video by URL, the platform downloads it, applies the enhancement you requested, and uploads the result to cloud object storage — all without you managing any transcoding infrastructure.
 
-# Welcome to Better API Documentation
+Every operation follows the same simple pattern: **create a task, track its progress, download the result**.
 
-Welcome to your new developer portal that makes sense. 🎉
+## Capabilities
 
-This is your new developer portal, built with ["Zudoku by Zuplo"](https://github.com/zuplo/zudoku)
-and designed to elevate your API documentation experience. We've streamlined the setup process so
-you can focus on what matters most: creating exceptional developer experiences.
+The platform exposes four AI-powered enhancement capabilities, each with a dedicated task creation endpoint:
 
-Think of this as your API's professional showcase—presenting your endpoints and documentation in the
-best possible light. Whether you're launching innovative new features or improving existing
-services, this portal provides the foundation for clear, accessible, and engaging developer
-documentation.
+| Capability | Endpoint | What it does |
+| ---------- | -------- | ------------ |
+| [SDR to HDR](./sdr-to-hdr) | `POST /api/v1/task/sdrToHdr` | Converts standard dynamic range video to HDR (PQ/HLG), or HDR to HDR Vivid. |
+| [Super Resolution](./super-resolution) | `POST /api/v1/task/superResolution` | Upscales video with an AI model, up to 4K or a custom resolution. |
+| [Frame Interpolation](./frame-interpolation) | `POST /api/v1/task/intelliFrame` | Intelligently interpolates frames to raise the frame rate, up to 60 fps. |
+| [Audio Enhancement](./audio-enhancement) | `POST /api/v1/task/audio` | Converts 2D stereo audio into immersive 3D multi-channel audio (up to 7.1.4). |
 
-Let's explore what we've configured for you and how you can customize it to perfectly match your
-needs.
+Once a task is created, the same task management endpoints work for all capabilities:
 
-## Let's Review Your Configuration
+| Operation | Endpoint | Method |
+| --------- | -------- | ------ |
+| Get task detail | `/api/v1/task/detail` | `GET` |
+| Get task progress | `/api/v1/task/progress` | `POST` |
+| Cancel task | `/api/v1/task/cancel` | `POST` |
 
-The developer portal is configured in the `zudoku.config.tsx` file. We've created a starter
-configuration to get you up and running quickly. Let's walk you through everything we've set up so
-you know how to customize it:
+The complete, interactive API reference is available in the [API Reference](/api) section.
 
-<Stepper>
+## How it works
 
-1. **Change the Basics**
+Tasks are processed asynchronously by a pool of GPU workers. Internally, each task runs through a highly parallel pipeline — the video is sliced into segments, transcoded in parallel, merged back together, and then merged with the enhanced audio track if audio processing was requested.
 
-   First, you may want to change the title and banner we've put in place. These are part of the
-   `page` section in your configuration.
-
-   :::tip
-
-   **Have a company logo?** Learn how you can
-   [add your logo](https://zuplo.com/docs/dev-portal/zudoku/configuration/site#logo) in our
-   documentation.
-
-   :::
-
-   ```jsx
-   {
-    // ...
-    "page": {
-      "title": "My Developer Portal",
-      "banner": {
-        "message": (
-          <div className="w-full text-center">
-            <strong>Congrats!</strong> 🙌 You just created your first developer
-            portal.
-          </div>
-        ),
-        "color": "info",
-        "dismissible": true,
-      }
-   }
-   ```
-
-1. **API Reference**
-
-   Your [API Reference](/api) is generated from your Zuplo OpenAPI file in `../routes.oas.json`—you
-   can add other APIs whenever you need them. Improve your documentation by adding more details to
-   the OpenAPI file.
-
-   ```json
-   {
-     // ...
-     "apis": {
-       "type": "file",
-       "input": "../config/routes.oas.json",
-       "navigationId": "api"
-     }
-   }
-   ```
-
-1. **Authentication & Login**
-
-   We've configured your project to use [Auth0](https://auth0.com) as an authentication provider
-   with our demo account. We support many authentication providers—check the
-   [documentation on how to configure](https://zuplo.com/docs/dev-portal/zudoku/configuration/authentication#authentication-providers)
-   each one.
-
-   :::caution
-
-   You must change the authentication provider before taking this to **production**. Using our demo
-   provider is not secure for production use.
-
-   :::
-
-   ```json
-   {
-     // ...
-     "authentication": {
-       "type": "auth0",
-       "domain": "auth.zuplo.io",
-       "clientId": "kWQs12Q9Og4w6zzI82qJSa3klN1sMtvz",
-       "audience": "https://api.example.com/"
-     }
-   }
-   ```
-
-1. **API Keys**
-
-   We've enabled API Keys on your developer portal. This connects to the API Key Service in Zuplo.
-   To add API Keys for your users, create a consumer with the matching email address in **Services
-   => API Key Service** in Zuplo, or
-   [create a Consumer using the Zuplo API](https://zuplo.com/docs/api/api-keys-consumers#creates-a-consumer).
-
-   ```json
-   {
-     // ...
-     "apiKeys": {
-       "enabled": true
-     }
-   }
-   ```
-
-</Stepper>
-
-## Make It Yours
-
-You can customize the look and feel of your documentation site by modifying the `theme` section in
-`zudoku.config.tsx`. Why not try changing the primary color of your site?
-
-```json
-{
-  // ...
-  "theme": {
-    "light": {
-      "primary": "316 100% 50%",
-      "primaryForeground": "360 100% 100%"
-    },
-    "dark": {
-      "primary": "316 100% 50%",
-      "primaryForeground": "360 100% 100%"
-    }
-  }
-  // ...
-}
+```ansi title="Task pipeline"
+[1;36m  create task          download            analyze           process (parallel)          upload[0m
+[36m┌────────────┐   ┌──────────────┐   ┌────────────────┐   ┌─────────────────────┐   ┌──────────────┐[0m
+[36m│ POST task  │[0m [32m→[0m [36m│ fetch source │[0m [32m→[0m [36m│ probe metadata │[0m [32m→[0m [36m│ video path (slices) │[0m [32m→[0m [36m│ cloud object │[0m
+[36m│  (queued)  │   │ from inputUrl│   │ with mediainfo │   │ audio path (2D→3D)  │   │   storage    │[0m
+[36m└────────────┘   └──────────────┘   └────────────────┘   └─────────────────────┘   └──────────────┘[0m
 ```
 
-We have extensive customization options available. From colors to fonts and borders, find the
-[full list of options](https://zuplo.com/docs/dev-portal/zudoku/customization/colors-theme) in our
-documentation.
+Key characteristics:
+
+- **Asynchronous by design** — Task creation returns immediately with a `taskId`. Processing may take from minutes to hours depending on file size and requested enhancement.
+- **Real-time progress** — Every task reports download, video, audio, and upload progress as values between `0` and `1`. See [Task Lifecycle](./task-lifecycle).
+- **Cloud storage delivery** — Output files are uploaded to cloud object storage (Alibaba Cloud OSS or Azure Blob, depending on deployment). The `outUrl` field in the task detail is a directly downloadable URL. See [Output Files & Storage](./output-files).
+- **Automatic cleanup** — All intermediate files (source copy, slices, intermediate renders) are deleted from the workers as soon as the task finishes.
+- **Cancellation** — Waiting or running tasks can be cancelled at any time.
+
+## Base URL
+
+All requests are sent to the platform's base URL with the `/api/v1` prefix:
+
+```ansi title="Base URL"
+[36mhttp://apis.mls-tech.cn[0m/api/v1/task/[33m{operation}[0m
+```
+
+:::note
+
+The examples in this documentation use the production base URL `http://apis.mls-tech.cn`. If your environment uses a different endpoint, replace the host in the examples accordingly.
+
+:::
+
+## Authentication
+
+Every request must include your `callerId` and `apiKey` credentials. The API uses simple key comparison authentication, and each caller can only see and operate on their own tasks.
+
+See [Authentication](./authentication) for details.
+
+## Next steps
+
+- Walk through your first task in the [Quickstart](./quickstart)
+- Learn how credentials work in [Authentication](./authentication)
+- Understand task states and progress in [Task Lifecycle](./task-lifecycle)
+- Browse the full endpoint reference in the [API Reference](/api)

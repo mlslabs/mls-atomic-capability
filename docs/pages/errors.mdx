@@ -1,0 +1,113 @@
+---
+title: Errors & Status Codes
+sidebar_icon: triangle-alert
+description: Response envelope, HTTP status codes, business result codes, and task failure codes.
+---
+
+The API reports errors at three levels: the HTTP status, a business result `code` in the response envelope, and — for failed tasks — a `failCode` stored on the task. Knowing which level to check makes error handling straightforward.
+
+## Response envelope
+
+Every endpoint — success or failure — returns the same JSON envelope:
+
+```json title="Envelope"
+{
+  "code": 0,          // business result code, 0 means success
+  "message": "success",
+  "data": { },        // payload on success, null on failure
+  "traceId": null
+}
+```
+
+Check `code` first: `0` means the request was accepted and `data` carries the payload; anything else means the request failed and `message` describes why.
+
+## HTTP status codes
+
+Most errors are reported inside a `200 OK` response — the platform uses the envelope `code` for business errors, not the HTTP status. Only transport-level problems change the HTTP status:
+
+| HTTP | When it happens |
+| ---- | --------------- |
+| `200 OK` | Normal response — including business errors such as invalid parameters, unauthorized, or task not found. |
+| `400 Bad Request` | Request body fails schema validation, for example a missing required field or a blank `taskId`. |
+| `404 Not Found` | The URL doesn't match any endpoint (or a missing static resource). |
+
+:::warning
+
+Don't rely on `resp.ok` / HTTP 2xx alone to detect failures. A `200` response can still carry `code 40100` or `40401`. Always branch on the envelope `code`.
+
+:::
+
+## Business result codes
+
+The envelope `code` values:
+
+| Code | Meaning | Typical cause |
+| ---- | ------- | ------------- |
+| `0` | Success | — |
+| `40001` | Invalid parameter | Missing/invalid `inputUrl`, unsupported enhancement parameter values, empty task id list. |
+| `40002` | Insufficient compute resource | The platform is out of capacity for new work. |
+| `40003` | Status mismatch | The operation doesn't fit the task's current state, for example cancelling an already-finished task. |
+| `40100` | Unauthorized | `callerId` missing, `apiKey` wrong, or the server has no key configured. See [Authentication](./authentication). |
+| `40401` | Object not found | Task id doesn't exist — or exists but belongs to another `callerId`. |
+| `50000` | System error | Unexpected internal error, for example failure to enqueue a task. |
+| `50001`-`50006` | Processing error codes | Legacy codes mirrored from the worker pipeline; in practice task-stage failures are reported on the task via `failCode` (below) rather than on the request. |
+
+Example — cancel a task that is already in a final state:
+
+```json title="200 OK, business error"
+{
+  "code": 40003,
+  "message": "只有待调度、处理中的任务才能取消",
+  "data": null,
+  "traceId": null
+}
+```
+
+:::note
+
+Some `message` values (especially from validation and worker paths) are in Chinese. Treat `message` as diagnostic text for humans; your integration logic should always branch on the numeric `code`, never on message content.
+
+:::
+
+## Task failure codes
+
+When a task fails (status `-1`), the detail response explains _which stage_ failed through `failCode`:
+
+| failCode | Stage | Meaning |
+| -------- | ----- | ------- |
+| `0` | — | No failure (task succeeded or hasn't failed). |
+| `100` | Parameter | Transcode parameters are not supported. |
+| `101` | Metadata | Source video metadata is not supported — for example an unsupported container or codec. See [Input Requirements](./formats). |
+| `102` | Video transcode | The video processing path failed. |
+| `103` | Audio transcode | The audio processing path failed. |
+| `104` | Upload | Uploading the output file to cloud storage failed. |
+| `105` | Download | Downloading the source video from `inputUrl` failed. |
+
+Alongside `failCode`, the detail response provides:
+
+- `message` — a short success/failure description,
+- `failLog` — the failure log recorded at the moment the task failed.
+
+```json title="Failed task detail (trimmed)"
+{
+  "code": 0,
+  "message": "success",
+  "data": {
+    "status": -1,
+    "failCode": 105,
+    "failLog": "downloadFile error! message: connect timeout",
+    "message": "downloadFile error! message: connect timeout",
+    "endTime": "2026-10-19 15:02:41"
+  },
+  "traceId": null
+}
+```
+
+Note the distinction: the request itself succeeded (`code 0`) because the detail endpoint worked; the *task* failed (`status -1`, `failCode 105`).
+
+## Error handling checklist
+
+- Parse the envelope on every response, even for HTTP 200.
+- On `code 40100`, check your credentials. On `code 40401`, verify the task id and that it belongs to your `callerId`.
+- For task failures, read `failCode` to decide whether the problem is your input (`100`/`101`/`105` — fix the source or parameters), the platform (`102`/`103`/`104` — retry later or contact support).
+- Since failed tasks stay failed, reprocessing means submitting a new task with corrected input.

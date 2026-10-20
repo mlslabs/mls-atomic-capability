@@ -1,0 +1,176 @@
+---
+title: Quickstart
+sidebar_icon: rocket
+description: Create your first media enhancement task and download the result in a few minutes.
+---
+
+This guide walks you through the complete workflow: create a task, watch its progress, and download the finished output file. It uses the [super resolution](./super-resolution) capability as an example, but the same flow applies to every capability.
+
+## Prerequisites
+
+Before you start, you need:
+
+- A `callerId` and `apiKey` issued by the platform team. If you don't have credentials yet, contact the API administrators.
+- A source video accessible through a public `http(s)` download URL. See [Input Requirements](./formats) for supported formats.
+- `curl` or any HTTP client.
+
+<Stepper>
+
+## Create a task
+
+Submit a task creation request. The only required fields are `inputUrl`, `param`, `callerId`, and `apiKey`.
+
+```bash title="Create a super resolution task"
+curl -X POST 'http://apis.mls-tech.cn/api/v1/task/superResolution' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "taskName": "my-first-upscale",
+    "inputUrl": "https://example.com/source-1080p.mp4",
+    "param": {
+      "superResolutionEnable": true,
+      "outputResolutionOpt": 7,
+      "cropSetting": 1,
+      "sceneModel": 1
+    },
+    "outName": "source-4k.mp4",
+    "callerId": "your-caller-id",
+    "apiKey": "your-api-key"
+  }'
+```
+
+A successful response returns the new task id in `data`:
+
+```json title="Response"
+{
+  "code": 0,
+  "message": "success",
+  "data": "3f2b8c4d5e6f7a8b9c0d1e2f3a4b5c6d",
+  "traceId": null
+}
+```
+
+Store the `taskId` — you need it for every subsequent call. The task now sits in the queue with status `0` (waiting for schedule).
+
+:::tip
+
+The four capability endpoints are `sdrToHdr`, `superResolution`, `intelliFrame`, and `audio`. Each accepts a capability-specific `param` object — see the [capability guides](#whats-next) for the exact fields.
+
+:::
+
+## Track progress
+
+Poll the progress endpoint while the task runs. Progress values are fractions between `0` and `1`; `null` means that stage hasn't started yet.
+
+```bash title="Get task progress"
+curl -X POST 'http://apis.mls-tech.cn/api/v1/task/progress' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "taskId": "3f2b8c4d5e6f7a8b9c0d1e2f3a4b5c6d",
+    "callerId": "your-caller-id",
+    "apiKey": "your-api-key"
+  }'
+```
+
+While the worker is transcoding, a typical response looks like this:
+
+```json title="Response (processing)"
+{
+  "code": 0,
+  "message": "success",
+  "data": {
+    "taskId": "3f2b8c4d5e6f7a8b9c0d1e2f3a4b5c6d",
+    "status": 3,
+    "videoProgress": 0.42,
+    "audioProgress": null,
+    "downloadProgress": 1,
+    "uploadProgress": null,
+    "message": "",
+    "updateTime": "2026-10-19 14:32:11"
+  },
+  "traceId": null
+}
+```
+
+`status` moves through the task lifecycle: `0` waiting → `1` downloading → `3` processing → `4` uploading → `5` success (or `-1` failed). A polling interval of a few seconds is typical; the reference web console polls every 2 seconds.
+
+See [Task Lifecycle](./task-lifecycle) for the full status table.
+
+## Get the result
+
+Once `status` reaches `5` (success), fetch the full task detail. The `outUrl` field contains the downloadable result, and `outMetadata` describes the output file.
+
+```bash title="Get task detail"
+curl -G 'http://apis.mls-tech.cn/api/v1/task/detail' \
+  --data-urlencode 'taskId=3f2b8c4d5e6f7a8b9c0d1e2f3a4b5c6d' \
+  --data-urlencode 'callerId=your-caller-id' \
+  --data-urlencode 'apiKey=your-api-key'
+```
+
+```json title="Response (trimmed)"
+{
+  "code": 0,
+  "message": "success",
+  "data": {
+    "taskId": "3f2b8c4d5e6f7a8b9c0d1e2f3a4b5c6d",
+    "taskName": "my-first-upscale",
+    "status": 5,
+    "inMetadata": { "resolution": "1920x1080", "codec": "AVC", "duration": 137.2 },
+    "outName": "source-4k.mp4",
+    "outUrl": "https://tech-media.oss-cn-beijing.aliyuncs.com/uhd_api/out/42/source-4k.mp4?Expires=...",
+    "outSize": 186220324,
+    "outMetadata": { "resolution": "3840x2160", "codec": "HEVC", "duration": 137.2 },
+    "failCode": 0,
+    "startTime": "2026-10-19 14:30:52",
+    "endTime": "2026-10-19 14:36:40"
+  },
+  "traceId": null
+}
+```
+
+Download the output file from `outUrl`:
+
+```bash title="Download the output"
+curl -o source-4k.mp4 '<outUrl from the detail response>'
+```
+
+:::warning{title="Pre-signed URLs expire"}
+
+For private buckets, `outUrl` is a pre-signed URL valid for a limited period (24 hours by default). Download the output before it expires.
+
+:::
+
+## (Optional) Cancel a task
+
+Waiting or running tasks can be cancelled. Cancellation is asynchronous: the task first moves to status `6` (cancelling), then to `7` (cancelled) once the worker has stopped.
+
+```bash title="Cancel a task"
+curl -X POST 'http://apis.mls-tech.cn/api/v1/task/cancel' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "taskId": "3f2b8c4d5e6f7a8b9c0d1e2f3a4b5c6d",
+    "callerId": "your-caller-id",
+    "apiKey": "your-api-key"
+  }'
+```
+
+```json title="Response"
+{
+  "code": 0,
+  "message": "success",
+  "data": {
+    "key": true,
+    "value": "Successfully cancelled 1/1 tasks"
+  },
+  "traceId": null
+}
+```
+
+</Stepper>
+
+## What's next
+
+- [SDR to HDR](./sdr-to-hdr) — convert SDR video to HDR10 (PQ/HLG) or HDR Vivid
+- [Super Resolution](./super-resolution) — AI upscaling up to 4K
+- [Frame Interpolation](./frame-interpolation) — raise frame rate up to 60 fps
+- [Audio Enhancement](./audio-enhancement) — 2D to 3D audio conversion
+- [Errors & Status Codes](./errors) — how to interpret failure responses

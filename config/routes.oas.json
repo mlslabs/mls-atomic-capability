@@ -500,7 +500,7 @@
           },
           "outName": {
             "type": "string",
-            "description": "Output file name (user specified outName or the default <source_file_name>_out.<ext>)"
+            "description": "Output file name (user specified outName or the default `<source_file_name>_out.<ext>`)"
           },
           "outUrl": {
             "type": "string",
@@ -858,7 +858,7 @@
           },
           "outName": {
             "type": "string",
-            "description": "Output file name, no path separators or special characters. Defaults to <source_file_name>_out.<ext> when omitted",
+            "description": "Output file name, no path separators or special characters. Defaults to `<source_file_name>_out.<ext>` when omitted",
             "example": "output.mp4"
           },
           "callerId": {
@@ -929,7 +929,7 @@
           },
           "outName": {
             "type": "string",
-            "description": "Output file name, no path separators or special characters. Defaults to <source_file_name>_out.<ext> when omitted",
+            "description": "Output file name, no path separators or special characters. Defaults to `<source_file_name>_out.<ext>` when omitted",
             "example": "output.mp4"
           },
           "callerId": {
@@ -1025,7 +1025,7 @@
           },
           "outName": {
             "type": "string",
-            "description": "Output file name, no path separators or special characters. Defaults to <source_file_name>_out.<ext> when omitted",
+            "description": "Output file name, no path separators or special characters. Defaults to `<source_file_name>_out.<ext>` when omitted",
             "example": "output.mp4"
           },
           "callerId": {
@@ -1063,7 +1063,7 @@
           },
           "outName": {
             "type": "string",
-            "description": "Output file name, no path separators or special characters. Defaults to <source_file_name>_out.<ext> when omitted",
+            "description": "Output file name, no path separators or special characters. Defaults to `<source_file_name>_out.<ext>` when omitted",
             "example": "output.mp4"
           },
           "callerId": {

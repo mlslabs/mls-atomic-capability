@@ -1,0 +1,71 @@
+---
+title: Frame Interpolation
+sidebar_icon: film
+description: Raise video frame rate with intelligent frame interpolation, up to 60 fps.
+---
+
+The frame interpolation capability increases a video's frame rate by synthesizing intermediate frames with an AI model. Motion becomes smoother, which matters for sports content, fast pans, and high-refresh-rate displays.
+
+**Endpoint:** `POST /api/v1/task/intelliFrame`
+
+## Request
+
+```bash title="Create a frame interpolation task"
+curl -X POST 'http://apis.mls-tech.cn/api/v1/task/intelliFrame' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "taskName": "fps-demo-01",
+    "inputUrl": "https://example.com/source-24fps.mp4",
+    "param": {
+      "intelliFrameInsertEnable": true,
+      "frameRate": 50
+    },
+    "outName": "source-50fps.mp4",
+    "callerId": "your-caller-id",
+    "apiKey": "your-api-key"
+  }'
+```
+
+The `param` object fields:
+
+| Field | Type | Required | Description |
+| ----- | ---- | -------- | ----------- |
+| `intelliFrameInsertEnable` | boolean | No (default `true`) | Master switch. |
+| `frameRate` | integer | Yes<sup>*</sup> | Target frame rate in fps. Maximum `60`. |
+
+<sup>*</sup> When `intelliFrameInsertEnable` is `true`, `frameRate` must be present and greater than `0`, otherwise the request fails with `code 40001`.
+
+## Frame rate rules
+
+- **Maximum: 60 fps.** Values above `60` are not supported.
+- **Target must not be lower than the source frame rate.** Interpolation only adds frames — it cannot reduce frame rate. A 30 fps source with `frameRate: 25` is invalid; use a target equal to or higher than the source (for example `60` for a 30 fps source).
+- Common targets: `50` (PAL-region displays and broadcasts) and `60` (max smoothness for modern displays).
+
+```json title="Common param values"
+{ "intelliFrameInsertEnable": true, "frameRate": 60 }
+```
+
+## What the model does
+
+Unlike simple frame blending or frame duplication, the interpolation model analyzes motion between neighboring frames and synthesizes new frames with coherent motion. This preserves sharpness during movement where naive blending would produce ghosting.
+
+The source's frame rate is detected automatically from the metadata probe (`inMetadata.frameRate`), so you only specify the target.
+
+## Output
+
+Output encoding follows the platform defaults (source container, H.265, original bitrate). Verify the conversion in the task detail:
+
+```json title="inMetadata vs outMetadata (trimmed)"
+{
+  "inMetadata":  { "frameRate": 23.976 },
+  "outMetadata": { "frameRate": 50 }
+}
+```
+
+See [Output Files & Storage](./output-files) for download URLs and naming.
+
+## Requirements & limits
+
+- Source container/codec must be supported — see [Input Requirements](./formats).
+- Sources with heavy motion blur or interlaced content may show artifacts; deinterlacing beforehand improves results.
+- The output is always re-encoded to H.265 (HEVC).

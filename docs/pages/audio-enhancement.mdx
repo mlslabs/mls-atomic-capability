@@ -1,0 +1,118 @@
+---
+title: Audio Enhancement
+sidebar_icon: audio-lines
+description: Convert 2D stereo audio into immersive 3D multi-channel audio, up to a 7.1.4 speaker layout.
+---
+
+The audio enhancement capability converts a video's 2D stereo (or mono) audio track into immersive 3D multi-channel audio using a dedicated AI model. The converted track is merged back with the re-encoded video, producing a single output file ready for spatial-audio playback.
+
+**Endpoint:** `POST /api/v1/task/audio`
+
+## Request
+
+```bash title="Create an audio enhancement task"
+curl -X POST 'http://apis.mls-tech.cn/api/v1/task/audio' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "taskName": "audio-demo-01",
+    "inputUrl": "https://example.com/source-stereo.mp4",
+    "param": {
+      "audio3dEnable": true,
+      "layout": "5.1.4",
+      "sampleRate": 44.1,
+      "format": "wav",
+      "audioBitrate": "832",
+      "enableVolumeGain": true,
+      "volumeGainParam": {
+        "l": 0, "r": 0, "c": 3, "lfe": 0,
+        "ls": 0, "rs": 0, "lrs": 0, "rrs": 0,
+        "ltf": 0, "rtf": 0, "ltr": 0, "rtr": 0
+      }
+    },
+    "outName": "source-3d.mp4",
+    "callerId": "your-caller-id",
+    "apiKey": "your-api-key"
+  }'
+```
+
+## Parameters
+
+| Field | Type | Required | Description |
+| ----- | ---- | -------- | ----------- |
+| `audio3dEnable` | boolean | No (default `true`) | Master switch for the 2D-to-3D conversion. When `false`, the audio path is skipped and the video is re-encoded with its original audio. |
+| `layout` | string | Yes<sup>*</sup> | Target speaker layout. Allowed values: `7.1.4`, `7.1.0`, `5.1.4`, `5.1.0`. |
+| `format` | string | Yes<sup>*</sup> | Output audio type. Allowed values: `wav`, `av3a`. |
+| `sampleRate` | number | No | Sample rate in kHz, for example `44.1` or `48`. |
+| `audioBitrate` | string | No | Audio bitrate in kbps, for example `"832"`. |
+| `useFakeStereo` | boolean | No (default `false`) | Use fake-stereo processing for mono sources. |
+| `enableVoiceOverflow` | boolean | No (default `false`) | Enable vocal overflow processing. |
+| `enableVolumeGain` | boolean | No (default `false`) | Enable per-channel volume gain (requires `volumeGainParam`). |
+| `volumeGainParam` | object | Conditional | Per-channel gains in dB — see below. Required when `enableVolumeGain` is `true`. |
+
+<sup>*</sup> When `audio3dEnable` is `true`, `layout` and `format` are required and must be from the allowed values, otherwise the request fails with `code 40001`.
+
+## Speaker layouts
+
+The layout names follow the `W.X.Y` convention — bed channels, low-frequency effect, and height channels:
+
+| Layout | Channels | Description |
+| ------ | -------- | ----------- |
+| `5.1.0` | 5 + LFE | Classic 5.1 surround sound |
+| `5.1.4` | 5 + LFE + 4 height | 5.1 with four overhead channels |
+| `7.1.0` | 7 + LFE | Extended surround with rear channels |
+| `7.1.4` | 7 + LFE + 4 height | Full immersive layout (matches home theater flagships) |
+
+## Audio output format
+
+- **`wav`** — uncompressed PCM in a WAV track inside the output container; maximum compatibility for post-production workflows.
+- **`av3a`** — the AVS3 3D audio codec (Chinese standard for immersive audio), for delivery to supporting platforms and devices.
+
+## Volume gain
+
+When `enableVolumeGain: true`, `volumeGainParam` adjusts each output channel independently, in dB. All 12 fields are optional numbers (omitted channels default to no gain):
+
+| Field | Channel | Field | Channel |
+| ----- | ------- | ----- | ------- |
+| `l` | Left front | `r` | Right front |
+| `c` | Center | `lfe` | Low-frequency effect |
+| `ls` | Left surround | `rs` | Right surround |
+| `lrs` | Left rear surround | `rrs` | Right rear surround |
+| `ltf` | Left top front | `rtf` | Right top front |
+| `ltr` | Left top rear | `rtr` | Right top rear |
+
+A typical use is boosting the dialogue (`c`) a few dB above the bed:
+
+```json title="Center channel +3 dB"
+{ "enableVolumeGain": true, "volumeGainParam": { "c": 3 } }
+```
+
+## How processing works
+
+Audio tasks run through the same [task lifecycle](./task-lifecycle) as video tasks, with the audio path active:
+
+1. The source video is downloaded and probed.
+2. The audio track is validated for 2D-to-3D conversion: codec must be `PCM`, `AAC`, `MP3`, or `FLAC`, and channels must be mono or stereo — see [Input Requirements](./formats).
+3. The video is re-encoded (H.265, default settings) while the audio is converted to the target layout **in parallel**.
+4. The converted audio is merged with the re-encoded video into the final output file.
+5. The result is uploaded and `outUrl` is recorded.
+
+Audio processing progress is reported through the `audioProgress` field of the progress endpoint, alongside `videoProgress`, `downloadProgress`, and `uploadProgress`.
+
+## Output
+
+Verify the conversion in the task detail — `outMetadata.audioChannelLayout` reflects the requested layout:
+
+```json title="Audio metadata comparison (trimmed)"
+{
+  "inMetadata":  { "audioCodec": "AAC", "audioChannelLayout": "2 channels" },
+  "outMetadata": { "audioChannelLayout": "5.1.4" }
+}
+```
+
+See [Output Files & Storage](./output-files) for download URLs and naming.
+
+## Requirements & limits
+
+- The source audio track must satisfy the 2D-to-3D constraints (codec and channels above). Sources outside these limits fail with `failCode 101`.
+- If `audio3dEnable` is `false`, no audio conversion happens — `audioProgress` stays `null`, and the source audio is simply re-encoded with the video.
+- The video in the output is re-encoded to H.265 with the default settings.

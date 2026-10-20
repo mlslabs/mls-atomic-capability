@@ -1,62 +1,97 @@
-// import { zuploMonetizationPlugin } from "@zuplo/zudoku-plugin-monetization";
-// import { graphqlPlugin } from "@zudoku/plugin-graphql";
+import "./styles.css";
 import type { ZudokuConfig } from "zudoku";
 
 /**
- * Developer Portal Configuration
+ * Zudoku's MDX pipeline runs `rehype-raw` before the Shiki highlighter, and
+ * that step re-parses the tree, dropping the `data.meta` field that code
+ * fences rely on to carry `title="..."` (and other) metadata. Mirroring the
+ * meta into a `metastring` element property keeps it available to
+ * `@shikijs/rehype`, which reads `properties.metastring` as a fallback.
+ */
+const remarkCodeMetaString = () => (tree: {
+  type: string;
+  meta?: string;
+  data?: Record<string, unknown>;
+  children?: unknown[];
+}) => {
+  const walk = (node: {
+    type: string;
+    meta?: string;
+    data?: Record<string, unknown>;
+    children?: unknown[];
+  }) => {
+    if (node.type === "code" && node.meta) {
+      node.data = {
+        ...node.data,
+        hProperties: {
+          ...(node.data?.hProperties as Record<string, unknown> | undefined),
+          metastring: node.meta,
+        },
+      };
+    }
+    for (const child of (node.children ?? []) as Parameters<typeof walk>[0][]) {
+      walk(child);
+    }
+  };
+  walk(tree);
+};
+
+/**
+ * Developer Portal Configuration for the Audio Video API
+ * (UHD transcoding & AI media enhancement platform).
+ *
  * For more information, see:
  * https://zuplo.com/docs/dev-portal/zudoku/configuration/overview
  */
 const config: ZudokuConfig = {
+  build: {
+    remarkPlugins: [remarkCodeMetaString],
+  },
   site: {
-    title: "My Developer Portal",
+    title: "Audio Video API",
     logo: {
       src: {
-        light: "https://cdn.zuplo.com/assets/my-dev-portal-light.svg",
-        dark: "https://cdn.zuplo.com/assets/my-dev-portal-dark.svg",
+        light: "/logo.svg",
+        dark: "/logo-dark.svg",
       },
+      alt: "Audio Video API",
+    },
+    footer: {
+      copyright: `© ${new Date().getFullYear()} Audio Video API. All rights reserved.`,
     },
   },
   metadata: {
-    title: "Developer Portal",
-    description: "Developer Portal",
+    title: "Audio Video API Documentation",
+    description:
+      "Developer documentation for the Audio Video API: UHD transcoding, SDR-to-HDR conversion, super resolution, frame interpolation, and 3D audio enhancement.",
   },
   navigation: [
     {
       type: "category",
       label: "Documentation",
+      icon: "book",
       items: [
         {
           type: "category",
           label: "Getting Started",
           icon: "sparkles",
-          items: [
-            {
-              type: "doc",
-              file: "introduction",
-            },
-            {
-              type: "doc",
-              file: "markdown",
-            },
-          ],
+          items: ["introduction", "quickstart", "authentication"],
         },
         {
           type: "category",
-          label: "Useful Links",
-          collapsible: false,
-          icon: "link",
+          label: "Core Concepts",
+          icon: "lightbulb",
+          items: ["task-lifecycle", "errors", "formats", "output-files"],
+        },
+        {
+          type: "category",
+          label: "Enhancement Capabilities",
+          icon: "wand-sparkles",
           items: [
-            {
-              type: "link",
-              label: "Zuplo Docs",
-              to: "https://zuplo.com/docs/dev-portal/introduction",
-            },
-            {
-              type: "link",
-              label: "Developer Portal Docs",
-              to: "https://zuplo.com/docs/dev-portal/introduction",
-            },
+            "sdr-to-hdr",
+            "super-resolution",
+            "frame-interpolation",
+            "audio-enhancement",
           ],
         },
       ],
@@ -65,40 +100,16 @@ const config: ZudokuConfig = {
       type: "link",
       to: "/api",
       label: "API Reference",
+      icon: "code",
     },
   ],
-  redirects: [{ from: "/", to: "/api" }],
+  redirects: [{ from: "/", to: "/introduction" }],
   apis: [
     {
       type: "file",
       input: "../config/routes.oas.json",
       path: "api",
     },
-  ],
-  authentication: {
-    // IMPORTANT: This is a demo Auth0 configuration.
-    // In a real application, you should replace these values with your own
-    // identity provider's configuration.
-    // This configuration WILL NOT WORK with custom domains.
-    // For more information, see:
-    // https://zuplo.com/docs/dev-portal/zudoku/configuration/authentication
-    type: "auth0",
-    domain: "auth.zuplo.site",
-    clientId: "f8I87rdsCRo4nU2FHf0fHVwA9P7xi7Ml",
-    audience: "https://api.example.com/",
-  },
-  apiKeys: {
-    enabled: true,
-  },
-  plugins: [
-    // Uncomment to document a GraphQL API:
-    // graphqlPlugin({
-    //   path: "/graphql",
-    //   schema: "./schema.graphql",
-    //   endpoint: "/graphql", // (optional, default: "/graphql")
-    // }),
-    // Uncomment to enable monetization:
-    // zuploMonetizationPlugin(),
   ],
 };
 

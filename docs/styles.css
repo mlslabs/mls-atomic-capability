@@ -1,0 +1,35 @@
+/*
+ * Audio Video API — developer portal layout overrides.
+ *
+ * Goals:
+ * - Page content fills the available width on laptop and desktop screens
+ *   instead of being capped at a narrow fixed width (Zudoku default: 768px).
+ * - A generous 2000px cap keeps line lengths reasonable on ultra-wide monitors.
+ * - The sticky "On this page" table of contents on the right keeps its default
+ *   behavior: click-to-scroll, smooth scrolling, and active section highlight.
+ *
+ * These rules are unlayered CSS, so they take precedence over Tailwind's
+ * layered utilities (e.g. `max-w-screen-2xl` and `xl:max-w-3xl`).
+ */
+
+/* Raise the page container cap from 1536px (max-w-screen-2xl) to 2000px. */
+#root .max-w-screen-2xl {
+  max-width: 2000px;
+}
+
+/*
+ * Let documentation page content fill the center column.
+ * Removes the `xl:max-w-3xl` (768px) cap on the prose container.
+ */
+main .prose {
+  max-width: 100%;
+}
+
+/*
+ * Keep long lines readable without narrowing the whole page:
+ * tables and code blocks already scroll horizontally when needed.
+ */
+main .prose table {
+  display: table;
+  width: 100%;
+}

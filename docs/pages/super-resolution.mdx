@@ -1,0 +1,95 @@
+---
+title: Super Resolution
+sidebar_icon: maximize
+description: AI upscaling of video up to 4K or a custom resolution.
+---
+
+The super resolution capability upscales video using an AI model trained to recover detail, rather than simple interpolation. You can upscale by a factor (2x/4x), target a fixed resolution (HD through 4K), or specify an arbitrary custom resolution.
+
+**Endpoint:** `POST /api/v1/task/superResolution`
+
+## Request
+
+```bash title="Create a super resolution task"
+curl -X POST 'http://apis.mls-tech.cn/api/v1/task/superResolution' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "taskName": "upscale-demo-01",
+    "inputUrl": "https://example.com/source-1080p.mp4",
+    "param": {
+      "superResolutionEnable": true,
+      "outputResolutionOpt": 7,
+      "cropSetting": 1,
+      "sceneModel": 1
+    },
+    "outName": "source-4k.mp4",
+    "callerId": "your-caller-id",
+    "apiKey": "your-api-key"
+  }'
+```
+
+The `param` object fields:
+
+| Field | Type | Required | Description |
+| ----- | ---- | -------- | ----------- |
+| `superResolutionEnable` | boolean | No (default `true`) | Master switch. When `true`, `outputResolutionOpt` must be provided (see validation below). |
+| `outputResolutionOpt` | integer | Yes<sup>*</sup> | Output resolution option — see the table below. |
+| `resolution` | string | Yes<sup>*</sup> | Custom resolution like `"1920x1080"`. Required only when `outputResolutionOpt` is `8`. |
+| `cropSetting` | integer | Recommended | How to fit the upscaled image: `1` = auto fit (keep aspect ratio), `2` = auto crop. |
+| `sceneModel` | integer | Recommended | Scene model: `1` = real-world scene, `2` = anime scene. |
+
+<sup>*</sup> Conditional requirement: with `superResolutionEnable: true`, omitting `outputResolutionOpt` — or using option `8` without `resolution` — fails the request with `code 40001`.
+
+## Resolution options
+
+| `outputResolutionOpt` | Output resolution |
+| --------------------- | ------------------ |
+| `1` | Original (no change) |
+| `2` | 2x upscale |
+| `3` | 4x upscale |
+| `4` | 1280x720 (HD) |
+| `5` | 1920x1080 (FHD) |
+| `6` | 2560x1440 (QHD) |
+| `7` | 3840x2160 (4K UHD) |
+| `8` | Custom — requires `resolution` |
+
+### Upscale factor vs fixed target
+
+- **Factor options (`2`, `3`)** scale relative to the source: a 960x540 source becomes 1920x1080 with option `2`.
+- **Fixed options (`4`-`7`)** target an absolute resolution regardless of source size — useful when you need consistent output dimensions across a batch.
+- **Option `8`** accepts any `WIDTHxHEIGHT` string, for non-standard aspect ratios or delivery requirements.
+
+## Crop settings
+
+When the source and target aspect ratios differ:
+
+- `cropSetting: 1` (auto fit) — the image is scaled to fit inside the target, preserving aspect ratio (letterboxing possible).
+- `cropSetting: 2` (auto crop) — the image is scaled to fill the target and excess edges are cropped.
+
+## Scene model
+
+The AI model has two variants optimized for different content:
+
+- `sceneModel: 1` — real-world footage (live action, photography, screen recordings).
+- `sceneModel: 2` — anime and cel-style animation.
+
+Choosing the matching model noticeably improves detail recovery on the respective content type.
+
+## Output
+
+Output encoding follows the platform defaults (source container, H.265, original bitrate). Verify the upscale in the task detail:
+
+```json title="inMetadata vs outMetadata (trimmed)"
+{
+  "inMetadata":  { "resolution": "1920x1080", "width": 1920, "height": 1080 },
+  "outMetadata": { "resolution": "3840x2160", "width": 3840, "height": 2160 }
+}
+```
+
+See [Output Files & Storage](./output-files) for download URLs and naming.
+
+## Requirements & limits
+
+- Source container/codec must be supported — see [Input Requirements](./formats).
+- Upscaling low-quality sources beyond 4x yields diminishing returns; option `3` (4x) works best on sources 1080p or below.
+- The output is always re-encoded to H.265 (HEVC).

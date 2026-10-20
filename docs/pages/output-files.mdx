@@ -1,0 +1,97 @@
+---
+title: Output Files & Storage
+sidebar_icon: cloud-upload
+description: Where result files are stored, output naming rules, default encoding settings, and pre-signed download URLs.
+---
+
+When a task succeeds, the platform uploads the result file to cloud object storage and records a directly downloadable URL on the task. This page explains output naming, default encoding, and how to consume the result.
+
+## Where output goes
+
+Output files are uploaded to the configured cloud provider — **Alibaba Cloud OSS** or **Azure Blob Storage**, depending on deployment. The object key layout is:
+
+```ansi title="Object key layout"
+[35m{root-path}[0m/[33m{task-db-id}[0m/[32m{output-file-name}[0m
+ [2me.g.[0m  [35muhd_api/out[0m/[33m42[0m/[32msource-4k.mp4[0m
+```
+
+Each task gets its own folder, so files from different tasks never collide.
+
+## Output naming rules
+
+The final output file name is resolved as follows:
+
+1. **You specified `outName`** — that name is used. Only the file name portion is kept (any path components are stripped to prevent path traversal), so `outName` must not contain `/`, `\`, or special characters.
+2. **You omitted `outName`** — the name is derived from the source file name with an `_out` suffix:
+   - `movie.mp4` with `format: origin` → `movie_out.mp4` (source extension kept)
+   - `movie.mov` with `format: mp4` → `movie_out.mp4` (target extension applied)
+
+The resolved name is written back to the task's `outName` field, so you can always see the actual file name in the detail response.
+
+:::warning
+
+Choose a unique `outName` per source to avoid confusion across tasks. Reusing the same `outName` across tasks is allowed (different task folders), but identical names within one task run are impossible because each task runs once.
+
+:::
+
+## Default output encoding
+
+The v1 capability endpoints apply server-side defaults for base transcoding settings — these are not configurable through the v1 API:
+
+| Setting | Default | Meaning |
+| ------- | ------- | ------- |
+| Container format | `origin` | Same container as the source file |
+| Video codec | `H.265` (HEVC) | All v1 enhancement pipelines render with x265 |
+| Bitrate control | `0` (keep original) | The output targets the source bitrate |
+
+The capability parameters themselves (resolution option, HDR mode, frame rate, speaker layout, and so on) _are_ configurable — see the individual capability guides.
+
+## Downloading the result
+
+Once a task reaches status `5` (success), the detail response's `outUrl` points at the result file:
+
+```json title="outUrl in the detail response"
+{
+  "data": {
+    "status": 5,
+    "outName": "source-4k.mp4",
+    "outUrl": "https://tech-media.oss-cn-beijing.aliyuncs.com/uhd_api/out/42/source-4k.mp4?Expires=1765854000&OSSAccessKeyId=...&Signature=...",
+    "outSize": 186220324,
+    "outMetadata": { "resolution": "3840x2160", "codec": "HEVC" }
+  }
+}
+```
+
+How `outUrl` is generated depends on the bucket's privacy setting:
+
+| Bucket type | outUrl form |
+| ----------- | ----------- |
+| **Private** (default) | A pre-signed URL with a limited validity period — **24 hours by default**. OSS uses signed query parameters; Azure uses a SAS read token. |
+| **Public** | A plain, permanent object URL. |
+
+:::danger{title="Pre-signed URLs expire"}
+
+If your bucket is private, download (or copy the object to your own storage) before the pre-signed URL expires. If it expires, you currently need to contact the platform team to re-issue the URL — the v1 API has no "refresh URL" endpoint.
+
+:::
+
+## Output metadata
+
+The detail response includes full `mediainfo` probes for both sides of the task:
+
+| Field | Contents |
+| ----- | -------- |
+| `inMetadata` | Source file: format, codec, resolution, width/height, frame rate, duration, size, HDR format, bitrate, color transfer/primaries/space, audio codec, sample rate, channel layout, audio bitrate. |
+| `outMetadata` | Output file: same fields, probed from the actual result. When audio enhancement is enabled, `audioChannelLayout` reflects the requested target layout. |
+| `outSize` | Output file size in bytes. |
+
+Comparing `inMetadata` and `outMetadata` is the quickest way to verify the enhancement worked (for example, resolution jumped from `1920x1080` to `3840x2160`).
+
+## Cleanup
+
+The platform aggressively cleans up worker storage:
+
+- Intermediate files — the downloaded source copy, video slices, per-slice renders, audio path outputs, slice metadata files — are **force-deleted** as soon as the task ends (success, failure, or cancellation).
+- Only the final output file in cloud storage persists.
+
+Nothing needs to be cleaned up on the caller side, but keep in mind that the platform does **not** manage the lifecycle of objects in the storage bucket — long-term retention or deletion of outputs is your responsibility.

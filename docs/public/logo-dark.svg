@@ -1,0 +1,16 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="avLogoGradDark" x1="4" y1="4" x2="60" y2="60" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#818CF8"/>
+      <stop offset="0.55" stop-color="#6366F1"/>
+      <stop offset="1" stop-color="#22D3EE"/>
+    </linearGradient>
+  </defs>
+  <rect x="3" y="3" width="58" height="58" rx="15" fill="url(#avLogoGradDark)"/>
+  <rect x="3" y="3" width="58" height="58" rx="15" stroke="#C7D2FE" stroke-opacity="0.35" stroke-width="1.5"/>
+  <path d="M23 19.5L45 32L23 44.5V19.5Z" fill="#FFFFFF"/>
+  <path d="M12.5 24.5C11.5 25.5 11.5 38.5 12.5 39.5" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round"/>
+  <path d="M17.5 29.5C17 30 17 34 17.5 34.5" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" opacity="0.85"/>
+  <circle cx="49" cy="15" r="3.5" fill="#FDE68A"/>
+  <path d="M49 6.5L50.2 10.3L54 11.5L50.2 12.7L49 16.5L47.8 12.7L44 11.5L47.8 10.3L49 6.5Z" fill="#FDE68A"/>
+</svg>
