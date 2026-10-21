@@ -1,7 +1,7 @@
 {
   "info": {
-    "title": "Audio Video API - 音视频处理平台",
-    "description": "音视频转码任务管理接口文档：任务创建、查询、进度跟踪、取消等",
+    "title": "Mlslabs Audio Video API Platform",
+    "description": "This documentation covers the atomic capability APIs of the self-developed audio-video technologies by Mlslabs (Malanshan Audio-Video Lab). The API capabilities include video SDR-to-SDR conversion, video super-resolution, intelligent video frame interpolation, and 2D-to-3D audio conversion. Meanwhile, the platform implements multiple API interfaces for creating asynchronous tasks, querying task details, checking task progress, and canceling tasks.",
     "contact": {
       "name": "media-infra"
     },
